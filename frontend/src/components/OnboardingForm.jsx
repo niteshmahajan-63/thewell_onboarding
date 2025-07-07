@@ -4,32 +4,58 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import StripeCheckout from './StripeCheckout'
 import CalendlyBooking from './CalendlyBooking'
 
-const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsCompleted, documentId }) => {
+const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsCompleted, documentId, onboardingConfig }) => {
 	const [stepCompleting, setStepCompleting] = useState(false)
+
+	// Find the current step object
+	const getCurrentStepObject = () => {
+		return steps.find(step => step.id === currentStep)
+	}
+
+	// Find the next step
+	const getNextStep = () => {
+		const currentIndex = steps.findIndex(step => step.id === currentStep)
+		return currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null
+	}
+
+	const handleStepComplete = (stepData = {}) => {
+		setStepCompleting(true)
+
+		markStepAsCompleted(currentStep)
+
+		setTimeout(() => {
+			const nextStep = getNextStep()
+			if (nextStep) {
+				setCurrentStep(nextStep.id)
+			}
+			setStepCompleting(false)
+		}, 1500)
+	}
 
 	const handlePandaDocComplete = (isComplete, data) => {
 		if (isComplete) {
 			console.log('Document signed successfully:', data)
-			setStepCompleting(true)
-
-			markStepAsCompleted(currentStep)
-
-			setTimeout(() => {
-				setCurrentStep(2)
-				setStepCompleting(false)
-			}, 1500)
+			handleStepComplete(data)
 		}
 	}
 	
 	const handleCalendlyComplete = () => {
-		setStepCompleting(true)
-		
-		markStepAsCompleted(currentStep)
-		
-		// No need to advance to next step as this is the last step
-		setTimeout(() => {
-			setStepCompleting(false)
-		}, 1500)
+		handleStepComplete()
+	}
+
+	const handleStripeComplete = () => {
+		handleStepComplete()
+	}
+
+	const currentStepObject = getCurrentStepObject()
+	const isLastStep = !getNextStep()
+
+	if (!currentStepObject) {
+		return (
+			<div className="text-center py-16">
+				<p className="text-gray-300">Invalid step configuration</p>
+			</div>
+		)
 	}
 
 	return (
@@ -37,18 +63,20 @@ const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsComplete
 			<Card className="w-full bg-white border-gray-300 overflow-hidden">
 				<CardHeader className="bg-gradient-to-r from-well-dark via-well-primary to-well-light w-full">
 					<CardTitle className="text-center text-white font-bold text-xl">
-						Step {currentStep}: {steps[currentStep - 1].title}
+						Step {currentStep}: {currentStepObject.title}
 					</CardTitle>
 				</CardHeader>
-				<CardContent className={`p-6 ${currentStep === 3 ? 'min-h-[850px]' : 'min-h-[400px]'} flex items-center justify-center bg-white w-full`}>
-					{currentStep === 1 && !stepCompleting && documentId && (
+				<CardContent className={`p-6 ${currentStepObject.type === 'meeting' ? 'min-h-[850px]' : 'min-h-[400px]'} flex items-center justify-center bg-white w-full`}>
+					
+					{/* Agreement Step */}
+					{currentStepObject.type === 'agreement' && !stepCompleting && documentId && (
 						<PandaDocSigning
 							onSigningComplete={handlePandaDocComplete}
 							documentId={documentId}
 						/>
 					)}
 
-					{currentStep === 1 && !stepCompleting && !documentId && (
+					{currentStepObject.type === 'agreement' && !stepCompleting && !documentId && (
 						<div className="text-center py-16">
 							<div className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-xl p-12 max-w-md mx-auto">
 								<p className="text-lg text-gray-300">Loading document...</p>
@@ -57,34 +85,18 @@ const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsComplete
 						</div>
 					)}
 
-					{currentStep === 1 && stepCompleting && (
-						<div className="text-center py-16">
-							<div className="bg-green-50 border-2 border-green-200 rounded-xl p-12 max-w-md mx-auto">
-								<div className="flex items-center justify-center mb-4">
-									<div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-										<svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-										</svg>
-									</div>
-								</div>
-								<p className="text-lg font-semibold text-green-800">Document Signed Successfully!</p>
-								<p className="text-sm text-green-600 mt-2">Moving to next step...</p>
-							</div>
-						</div>
+					{/* Payment Step */}
+					{currentStepObject.type === 'payment' && !stepCompleting && (
+						<StripeCheckout onNext={handleStripeComplete} />
 					)}
 
-					{currentStep === 2 && (
-						<StripeCheckout onNext={() => {
-							markStepAsCompleted(currentStep);
-							setCurrentStep(3);
-						}} />
-					)}
-
-					{currentStep === 3 && !stepCompleting && (
+					{/* Meeting Step */}
+					{currentStepObject.type === 'meeting' && !stepCompleting && (
 						<CalendlyBooking onBookingComplete={handleCalendlyComplete} />
 					)}
 					
-					{currentStep === 3 && stepCompleting && (
+					{/* Step Completing State */}
+					{stepCompleting && (
 						<div className="text-center py-16">
 							<div className="bg-green-50 border-2 border-green-200 rounded-xl p-12 max-w-md mx-auto">
 								<div className="flex items-center justify-center mb-4">
@@ -94,8 +106,12 @@ const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsComplete
 										</svg>
 									</div>
 								</div>
-								<p className="text-lg font-semibold text-green-800">Onboarding Complete!</p>
-								<p className="text-sm text-green-600 mt-2">All steps have been completed successfully.</p>
+								<p className="text-lg font-semibold text-green-800">
+									{isLastStep ? 'Onboarding Complete!' : `${currentStepObject.name} Completed!`}
+								</p>
+								<p className="text-sm text-green-600 mt-2">
+									{isLastStep ? 'All steps have been completed successfully.' : 'Moving to next step...'}
+								</p>
 							</div>
 						</div>
 					)}

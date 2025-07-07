@@ -151,7 +151,7 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 					</div>
 					<div className="space-y-3">
 						<h3 className="text-green-800 font-bold text-xl">
-							✓ Document signed successfully!
+							Document signed successfully!
 						</h3>
 						<p className="text-green-700">
 							Your service agreement has been completed. You can now proceed to the next step.

@@ -141,6 +141,7 @@ export const useOnboarding = (recordId) => {
 	}, [documentId, checkDocumentStatus])
 
 	return {
+		recordId,
 		currentStep,
 		setCurrentStep,
 		completedSteps,

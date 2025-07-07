@@ -6,6 +6,7 @@ import { OnboardingService } from './onboarding.service';
 import { ZohoService } from './zoho.service';
 import { zohoConfig } from 'src/config/zoho.config';
 import { PrismaService } from '../common/prisma.service';
+import { StripeService } from './stripe.service';
 
 @Module({
     imports: [
@@ -13,7 +14,7 @@ import { PrismaService } from '../common/prisma.service';
         ConfigModule.forFeature(zohoConfig),
     ],
     controllers: [OnboardingController],
-    providers: [OnboardingService, ZohoService, PrismaService],
+    providers: [OnboardingService, ZohoService, PrismaService, StripeService],
     exports: [OnboardingService],
 })
 export class OnboardingModule { }

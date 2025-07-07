@@ -33,10 +33,14 @@ const CalendlyBooking = ({ onBookingComplete }) => {
     }
 
     return (
-        <div className="text-center w-full">
+        <div className="w-full mx-auto">
+            <div className="text-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Book Your Intake Meeting</h2>
+                <p className="text-gray-600 mx-auto max-w-md">
+                    To proceed with your onboarding, please book your intake meeting using the calender below.
+                </p>
+            </div>
             <div className="bg-white border-2 border-well-primary rounded-xl p-4 mx-auto">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Book Your Intake Meeting</h3>
-                
                 {/* Direct iframe approach */}
                 <div className="calendly-embed" style={{ width: "100%" }}>
                     <iframe

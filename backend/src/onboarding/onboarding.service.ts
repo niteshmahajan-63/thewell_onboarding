@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ZohoService } from './zoho.service';
 import { PrismaService } from '../common/prisma.service';
+import { StripeService } from './stripe.service';
 
 @Injectable()
 export class OnboardingService {
@@ -9,6 +10,7 @@ export class OnboardingService {
 	constructor(
 		private readonly zohoService: ZohoService,
 		private readonly prisma: PrismaService,
+		private readonly stripeService: StripeService,
 	) { }
 
 	async getRecordById(
@@ -16,7 +18,7 @@ export class OnboardingService {
 	): Promise<Record<string, any>> {
 		// Get the record from Zoho
 		const zohoRecord = await this.zohoService.getRecordById(recordId);
-		
+
 		// Extract needed fields from the Zoho response
 		const clientData = {
 			zohoRecordId: zohoRecord.ID,
@@ -44,7 +46,7 @@ export class OnboardingService {
 			});
 
 			this.logger.log(`Record ${recordId} saved/updated in the database with id: ${savedClient.id}`);
-			
+
 			// Return the combined data (with database id included)
 			return { ...zohoRecord, dbId: savedClient.id };
 		} catch (error) {
@@ -56,5 +58,20 @@ export class OnboardingService {
 
 	async getRecords(): Promise<Record<string, any>> {
 		return this.zohoService.getRecords();
+	}
+
+	async createCheckoutSession(
+		recordId: string,
+	): Promise<{ url: string }> {
+		this.logger.log(`Creating checkout session for record: ${recordId}`);
+
+		try {
+			const session = await this.stripeService.createCheckoutSession(recordId);
+			this.logger.log(`Checkout session created successfully for record: ${recordId}`);
+			return { url: session.url };
+		} catch (error) {
+			this.logger.error(`Failed to create checkout session for record ${recordId}: ${error.message}`);
+			throw error;
+		}
 	}
 }

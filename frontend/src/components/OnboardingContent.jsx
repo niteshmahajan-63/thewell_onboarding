@@ -3,6 +3,7 @@ import { useOnboardingContext } from '../contexts/OnboardingContext'
 import OnboardingHeader from './OnboardingHeader'
 import StepIndicator from './StepIndicator'
 import OnboardingForm from './OnboardingForm'
+import DemoStepSelector from './DemoStepSelector'
 
 /**
  * Main onboarding content component
@@ -66,6 +67,11 @@ const OnboardingContent = () => {
 	return (
 		<div className="space-y-8">
 			<OnboardingHeader />
+			<DemoStepSelector 
+				steps={steps} 
+				currentStep={currentStep}
+				setCurrentStep={setCurrentStep}
+			/>
 			<StepIndicator 
 				steps={steps} 
 				currentStep={currentStep} 

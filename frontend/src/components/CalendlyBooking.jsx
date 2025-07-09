@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react'
-import { Button } from './ui/button'
+import { InlineWidget } from "react-calendly";
 
-const CalendlyBooking = ({ onBookingComplete }) => {
+const CalendlyBooking = ({ onBookingComplete, recordId }) => {
     const [isBookingComplete, setIsBookingComplete] = useState(false)
 
-    // Simplify by using an iframe directly instead of the script-based approach
-    const handleBookingComplete = () => {
-        setIsBookingComplete(true);
-        setTimeout(() => {
-            if (onBookingComplete) {
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.data?.event === 'calendly.event_scheduled') {
+                setIsBookingComplete(true);
                 onBookingComplete();
             }
-        }, 1000);
-    };
-    
+        };
+
+        window.addEventListener('message', handler);
+        return () => {
+            window.removeEventListener('message', handler);
+        };
+    }, [onBookingComplete, recordId, setIsBookingComplete, isBookingComplete,
+    ]);
+
     if (isBookingComplete) {
         return (
             <div className="text-center py-16">
@@ -41,26 +46,13 @@ const CalendlyBooking = ({ onBookingComplete }) => {
                 </p>
             </div>
             <div className="bg-white border-2 border-well-primary rounded-xl p-4 mx-auto">
-                {/* Direct iframe approach */}
                 <div className="calendly-embed" style={{ width: "100%" }}>
-                    <iframe
-                        src="https://calendly.com/the-well-recruiting-team/peak-retirement-introductory-call?back=1&month=2025-07&embed=true"
-                        width="100%"
-                        height="700"
-                        frameBorder="0"
-                        title="Schedule your intake meeting"
-                    ></iframe>
+                    <InlineWidget
+                        url="https://calendly.com/pradeep-kumar-emailthewell/30min"
+                        styles={{ height: '700px' }}
+                        utm={{ utmContent: recordId }}
+                    />
                 </div>
-                
-                {/* Always show "Complete" button at the bottom */}
-                {/* <div className="mt-4 pt-4 border-t border-gray-200">
-                    <Button 
-                        onClick={handleBookingComplete} 
-                        className="bg-well-primary hover:bg-well-dark text-white"
-                    >
-                        Complete Booking
-                    </Button>
-                </div> */}
             </div>
         </div>
     )

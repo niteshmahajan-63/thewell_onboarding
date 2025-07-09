@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import StripeCheckout from './StripeCheckout'
 import CalendlyBooking from './CalendlyBooking'
 
-const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsCompleted, documentId, onboardingConfig }) => {
+const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsCompleted, documentId, onboardingConfig, recordId }) => {
 	const [stepCompleting, setStepCompleting] = useState(false)
 
 	// Find the current step object
@@ -92,7 +92,7 @@ const OnboardingForm = ({ currentStep, steps, setCurrentStep, markStepAsComplete
 
 					{/* Meeting Step */}
 					{currentStepObject.type === 'meeting' && !stepCompleting && (
-						<CalendlyBooking onBookingComplete={handleCalendlyComplete} />
+						<CalendlyBooking onBookingComplete={handleCalendlyComplete} recordId={recordId} />
 					)}
 					
 					{/* Step Completing State */}

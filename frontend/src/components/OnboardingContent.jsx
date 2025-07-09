@@ -19,7 +19,8 @@ const OnboardingContent = () => {
 		error,
 		onboardingConfig,
 		steps,
-		markStepAsCompleted
+		markStepAsCompleted,
+		recordId
 	} = useOnboardingContext()
 
 	// Loading State
@@ -84,6 +85,7 @@ const OnboardingContent = () => {
 				markStepAsCompleted={markStepAsCompleted}
 				documentId={documentId}
 				onboardingConfig={onboardingConfig}
+				recordId={recordId}
 			/>
 		</div>
 	)

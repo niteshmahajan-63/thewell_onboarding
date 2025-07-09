@@ -15,23 +15,33 @@ datasource db {
 }
 
 model Client {
-  id                    Int       @id @default(autoincrement())
-  zohoRecordId          String    @unique @map("zoho_record_id") // This maps to the "ID" field
-  dealId                String?   @map("deal_id")
-  dealName              String?   @map("deal_name")
-  contactId             String?   @map("contact_id")
-  contactName           String?   @map("contact_name")
-  companyId             String?   @map("company_id")
-  companyName           String?   @map("company_name")
-  pandaDocId            String?   @map("pandadoc_id")
-  agreementId           String?   @map("agreement_id")
-  agreementName         String?   @map("agreement_name")
-  agreementRequired     String?   @map("agreement_required") // Yes/No value
-  paymentLink           Json?     @map("payment_link")
-  stripeRequired        String?   @map("stripe_required") // Yes/No value
-  intakeMeetingRequired String?   @map("intake_meeting_required") // Yes/No value
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  id                    Int      @id @default(autoincrement())
+  zohoRecordId          String   @unique @map("zoho_record_id") // This maps to the "ID" field
+  dealId                String?  @map("deal_id")
+  dealName              String?  @map("deal_name")
+  contactId             String?  @map("contact_id")
+  contactName           String?  @map("contact_name")
+  companyId             String?  @map("company_id")
+  companyName           String?  @map("company_name")
+  pandaDocId            String?  @map("pandadoc_id")
+  agreementId           String?  @map("agreement_id")
+  agreementName         String?  @map("agreement_name")
+  agreementRequired     String?  @map("agreement_required") // Yes/No value
+  paymentLink           Json?    @map("payment_link")
+  stripeRequired        String?  @map("stripe_required") // Yes/No value
+  intakeMeetingRequired String?  @map("intake_meeting_required") // Yes/No value
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("clients")
+}
+
+model CalendlyBookings {
+  id           Int      @id @default(autoincrement())
+  zohoRecordId String   @unique @map("zoho_record_id")
+  payload      Json     @map("payload")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("calendly_bookings")
 }

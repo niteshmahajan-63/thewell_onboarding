@@ -12,28 +12,23 @@ export class StripeService {
     /**
      * Creates a checkout session for the customer
      * @param recordId The record ID for the checkout session
+     * @param stripeCustomerId The Stripe customer ID
+     * @param amount The amount to be charged in cents
      * @returns The URL for the checkout session
      */
-    async createCheckoutSession(recordId: string): Promise<{ url: string }> {
-        const customerId = await this.createOrUpdateCustomer('pradeep@gmail.com', 'Pradeep');
-
-        const setupPrice = await this.createSetupFeeProduct();
-        const subscriptionPrice = await this.createSubscriptionProduct();
+    async createCheckoutSession(recordId: string, stripeCustomerId: string, amount: number): Promise<{ url: string }> {
+        const productPrice = await this.createProduct(amount);
 
         const session = await this.stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            customer: customerId,
+            customer: stripeCustomerId,
             line_items: [
                 {
-                    price: setupPrice.id,
-                    quantity: 1,
-                },
-                {
-                    price: subscriptionPrice.id,
+                    price: productPrice.id,
                     quantity: 1,
                 }
             ],
-            mode: 'subscription',
+            mode: 'payment',
             success_url: `${process.env.FRONTEND_URL}/${recordId}`,
             cancel_url: `${process.env.FRONTEND_URL}/${recordId}`,
         });
@@ -64,20 +59,20 @@ export class StripeService {
     }
 
     /**
-     * Creates a one-time setup fee product and price
-     * @returns The price object for the setup fee
+     * Creates a product and price
+     * @param amount The amount to be charged in cents
+     * @returns The price object for the product
      */
-    private async createSetupFeeProduct(): Promise<Stripe.Price> {
-        const setupProduct = await this.stripe.products.create({
-            name: 'One-Time Setup Fee',
-            type: 'service',
-            description: 'Description for One-Time Setup Fee',
+    private async createProduct(amount: number): Promise<Stripe.Price> {
+        const product = await this.stripe.products.create({
+            name: 'Product Name',
+            description: 'Product Description',
         });
 
         return await this.stripe.prices.create({
-            unit_amount: 1000,
+            unit_amount: amount,
             currency: 'usd',
-            product: setupProduct.id,
+            product: product.id,
         });
     }
 

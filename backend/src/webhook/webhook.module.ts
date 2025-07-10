@@ -19,4 +19,4 @@ import { PrismaService } from '../common/prisma.service';
     ],
     exports: [WebhookService],
 })
-export class WebhookModule { }
+export class WebhookModule {}

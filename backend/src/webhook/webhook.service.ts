@@ -3,19 +3,35 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { CalendlyInviteeData, CalendlyWebhookPayload } from './dto/calendly.dto';
 import { WebhookRepository } from './webhook.repository';
+import Stripe from 'stripe';
 
 @Injectable()
 export class WebhookService {
     private readonly logger = new Logger(WebhookService.name);
     private readonly calendlyWebhookSecret: string;
+    private readonly stripeWebhookSecret: string;
+    private readonly stripeApiKey: string;
 
     constructor(
         private configService: ConfigService,
         private webhookRepository: WebhookRepository
     ) {
-        this.calendlyWebhookSecret = this.configService.get<string>('WEBHOOK_SIGNING_KEY');
+        // Initialize Calendly webhook secret
+        this.calendlyWebhookSecret = this.configService.get<string>('CALENDLY_WEBHOOK_SIGNING_KEY');
         if (!this.calendlyWebhookSecret) {
-            this.logger.warn('WEBHOOK_SIGNING_KEY is not set in environment variables');
+            this.logger.warn('CALENDLY_WEBHOOK_SIGNING_KEY is not set in environment variables');
+        }
+        
+        // Initialize Stripe webhook secret
+        this.stripeWebhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SIGNING_KEY');
+        if (!this.stripeWebhookSecret) {
+            this.logger.warn('STRIPE_WEBHOOK_SIGNING_KEY is not set in environment variables');
+        }
+        
+        // Initialize Stripe API key
+        this.stripeApiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+        if (!this.stripeApiKey) {
+            this.logger.warn('STRIPE_SECRET_KEY is not set in environment variables');
         }
     }
 
@@ -27,7 +43,7 @@ export class WebhookService {
      */
     async validateCalendlySignature(signatureHeader: string, body: string): Promise<boolean> {
         if (!this.calendlyWebhookSecret) {
-            this.logger.error('Cannot validate signature: WEBHOOK_SIGNING_KEY is not set');
+            this.logger.error('Cannot validate signature: CALENDLY_WEBHOOK_SIGNING_KEY is not set');
             return false;
         }
 
@@ -96,6 +112,96 @@ export class WebhookService {
 
             default:
                 this.logger.log(`Received unhandled Calendly event type: ${eventType}`);
+                return {
+                    message: 'Event received but not processed - event type not supported',
+                    success: true
+                };
+        }
+    }
+
+    async validateStripeSignature(signature: string, body: string | Buffer): Promise<Stripe.Event | boolean> {
+        if (!this.stripeWebhookSecret) {
+            this.logger.error('Cannot validate Stripe signature: STRIPE_WEBHOOK_SIGNING_KEY is not set');
+            return false;
+        }
+
+        if (!this.stripeApiKey) {
+            this.logger.error('Cannot validate Stripe signature: STRIPE_SECRET_KEY is not set');
+            return false;
+        }
+
+        if (!signature) {
+            this.logger.warn('Missing Stripe webhook signature header');
+            return false;
+        }
+
+        try {
+            const stripe = new Stripe(this.stripeApiKey);
+            
+            const event = stripe.webhooks.constructEvent(
+                body,
+                signature,
+                this.stripeWebhookSecret
+            );
+            
+            this.logger.log(`Stripe signature verification succeeded for event: ${event.type}`);
+            // Return the full event object so it can be used in the controller
+            return event;
+        } catch (error) {
+            this.logger.error(`Error validating Stripe signature: ${error.message}`);
+            // Log more details for debugging
+            this.logger.debug(`Body type: ${typeof body}`);
+            this.logger.debug(`Body length: ${body ? body.length : 0}`);
+            return false;
+        }
+    }
+
+    async handleStripeEvent(event: Stripe.Event) {
+        const eventType = event.type;
+
+        switch (eventType) {
+            case 'checkout.session.completed':
+                this.logger.log('Stripe checkout session completed');
+                // The event.data.object will be a Checkout Session
+                const session = event.data.object as Stripe.Checkout.Session;
+                this.logger.log(`Session ID: ${session.id}, Customer: ${session.customer}`);
+                
+                // TODO: Process checkout session data
+                // For example, update the client payment status in your database
+                
+                return {
+                    message: 'Stripe checkout session completed event processed successfully',
+                    success: true
+                };
+
+            case 'payment_intent.succeeded':
+                this.logger.log('Stripe payment intent succeeded');
+                // The event.data.object will be a PaymentIntent
+                const paymentIntent = event.data.object as Stripe.PaymentIntent;
+                this.logger.log(`Payment Intent ID: ${paymentIntent.id}, Amount: ${paymentIntent.amount}`);
+                
+                // TODO: Process payment intent data
+                
+                return {
+                    message: 'Stripe payment intent succeeded event processed successfully',
+                    success: true
+                };
+
+            case 'charge.succeeded':
+                this.logger.log('Stripe charge succeeded');
+                // The event.data.object will be a Charge
+                const charge = event.data.object as Stripe.Charge;
+                this.logger.log(`Charge ID: ${charge.id}, Amount: ${charge.amount}`);
+                
+                // TODO: Process charge data
+                
+                return {
+                    message: 'Stripe charge succeeded event processed successfully',
+                    success: true
+                };
+
+            default:
+                this.logger.log(`Received unhandled Stripe event type: ${eventType}`);
                 return {
                     message: 'Event received but not processed - event type not supported',
                     success: true

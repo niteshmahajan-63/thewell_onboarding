@@ -66,7 +66,11 @@ export class OnboardingService {
 		this.logger.log(`Creating checkout session for record: ${recordId}`);
 
 		try {
-			const session = await this.stripeService.createCheckoutSession(recordId);
+			// TODO: fetch stripeCustomerId and amount from the database
+			const stripeCustomerId = 'cus_SdVWP6tYPR0Os8';
+			const amount = 1000;
+			
+			const session = await this.stripeService.createCheckoutSession(recordId, stripeCustomerId, amount);
 			this.logger.log(`Checkout session created successfully for record: ${recordId}`);
 			return { url: session.url };
 		} catch (error) {

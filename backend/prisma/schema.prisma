@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -15,8 +9,6 @@ datasource db {
 }
 
 model Client {
-  id                    Int      @id @default(autoincrement())
-  zohoRecordId          String   @unique @map("zoho_record_id") // This maps to the "ID" field
   dealId                String?  @map("deal_id")
   dealName              String?  @map("deal_name")
   contactId             String?  @map("contact_id")
@@ -26,12 +18,14 @@ model Client {
   pandaDocId            String?  @map("pandadoc_id")
   agreementId           String?  @map("agreement_id")
   agreementName         String?  @map("agreement_name")
-  agreementRequired     String?  @map("agreement_required") // Yes/No value
+  agreementRequired     String?  @map("agreement_required")
   paymentLink           Json?    @map("payment_link")
-  stripeRequired        String?  @map("stripe_required") // Yes/No value
-  intakeMeetingRequired String?  @map("intake_meeting_required") // Yes/No value
+  stripeRequired        String?  @map("stripe_required")
+  intakeMeetingRequired String?  @map("intake_meeting_required")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
+  zohoRecordId          String   @unique @map("zoho_record_id")
+  id                    Int      @id @default(autoincrement())
 
   @@map("clients")
 }
@@ -44,4 +38,44 @@ model CalendlyBookings {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("calendly_bookings")
+}
+
+model StripePayments {
+  id               Int      @id @default(autoincrement())
+  zohoRecordId     String   @unique @map("zoho_record_id")
+  customerId       String   @map("customer_id")
+  paymentDate      DateTime @map("payment_date")
+  paymentStatus    String   @map("payment_status")
+  paymentId        String   @map("payment_id")
+  payment          String   @map("payment")
+  amount           Decimal  @map("amount") @db.Decimal(10, 2)
+  paymentSource    String   @map("payment_source")
+  invoiceId        String?  @map("invoice_id")
+  hostedInvoiceUrl String?  @map("hosted_invoice_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("stripe_payments")
+}
+
+model OnboardingSteps {
+  id          Int           @id @default(autoincrement())
+  title       String        @map("title")
+  name        String        @map("name")
+  type        String        @map("type")
+  clientSteps ClientSteps[]
+
+  @@map("onboarding_steps")
+}
+
+model ClientSteps {
+  id           Int             @id @default(autoincrement())
+  zohoRecordId String          @map("zoho_record_id")
+  stepId       Int             @map("step_id")
+  isCompleted  Boolean         @default(false) @map("is_completed")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  step         OnboardingSteps @relation(fields: [stepId], references: [id])
+
+  @@map("client_steps")
 }

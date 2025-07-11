@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { OnboardingController } from './onboarding.controller';
 import { OnboardingService } from './onboarding.service';
+import { OnboardingRepository } from './onboarding.repository';
 import { ZohoService } from './zoho.service';
 import { zohoConfig } from 'src/config/zoho.config';
 import { PrismaService } from '../common/prisma.service';
@@ -14,7 +15,7 @@ import { StripeService } from './stripe.service';
         ConfigModule.forFeature(zohoConfig),
     ],
     controllers: [OnboardingController],
-    providers: [OnboardingService, ZohoService, PrismaService, StripeService],
+    providers: [OnboardingService, OnboardingRepository, ZohoService, PrismaService, StripeService],
     exports: [OnboardingService],
 })
 export class OnboardingModule { }

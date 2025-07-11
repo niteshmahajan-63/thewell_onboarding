@@ -5,6 +5,7 @@ import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
 import { WebhookRepository } from './webhook.repository';
 import { PrismaService } from '../common/prisma.service';
+import { StripeService } from 'src/onboarding/stripe.service';
 
 @Module({
     imports: [
@@ -15,7 +16,8 @@ import { PrismaService } from '../common/prisma.service';
     providers: [
         WebhookService,
         WebhookRepository,
-        PrismaService
+        PrismaService,
+        StripeService
     ],
     exports: [WebhookService],
 })

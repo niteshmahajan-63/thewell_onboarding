@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { CalendlyInviteeData, CalendlyWebhookPayload } from './dto/calendly.dto';
+import { CalendlyWebhookPayload } from './dto/calendly.dto';
 import { WebhookRepository } from './webhook.repository';
 import Stripe from 'stripe';
+import { StripeService } from '../onboarding/stripe.service';
 
 @Injectable()
 export class WebhookService {
@@ -14,20 +15,21 @@ export class WebhookService {
 
     constructor(
         private configService: ConfigService,
-        private webhookRepository: WebhookRepository
+        private webhookRepository: WebhookRepository,
+        private stripeService: StripeService
     ) {
         // Initialize Calendly webhook secret
         this.calendlyWebhookSecret = this.configService.get<string>('CALENDLY_WEBHOOK_SIGNING_KEY');
         if (!this.calendlyWebhookSecret) {
             this.logger.warn('CALENDLY_WEBHOOK_SIGNING_KEY is not set in environment variables');
         }
-        
+
         // Initialize Stripe webhook secret
         this.stripeWebhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SIGNING_KEY');
         if (!this.stripeWebhookSecret) {
             this.logger.warn('STRIPE_WEBHOOK_SIGNING_KEY is not set in environment variables');
         }
-        
+
         // Initialize Stripe API key
         this.stripeApiKey = this.configService.get<string>('STRIPE_SECRET_KEY');
         if (!this.stripeApiKey) {
@@ -94,7 +96,7 @@ export class WebhookService {
             case 'invitee.created':
                 // Check if utm_content exists (which contains zohoRecordId)
                 const zohoRecordId = payload.payload.tracking?.utm_content;
-                
+
                 if (!zohoRecordId) {
                     this.logger.warn('Missing zohoRecordId (utm_content) in Calendly payload');
                     return {
@@ -102,7 +104,7 @@ export class WebhookService {
                         success: false
                     };
                 }
-                
+
                 await this.webhookRepository.storeCalendlyBooking(zohoRecordId, payload.payload);
 
                 return {
@@ -137,13 +139,13 @@ export class WebhookService {
 
         try {
             const stripe = new Stripe(this.stripeApiKey);
-            
+
             const event = stripe.webhooks.constructEvent(
                 body,
                 signature,
                 this.stripeWebhookSecret
             );
-            
+
             this.logger.log(`Stripe signature verification succeeded for event: ${event.type}`);
             // Return the full event object so it can be used in the controller
             return event;
@@ -161,45 +163,62 @@ export class WebhookService {
 
         switch (eventType) {
             case 'checkout.session.completed':
-                this.logger.log('Stripe checkout session completed');
-                // The event.data.object will be a Checkout Session
-                const session = event.data.object as Stripe.Checkout.Session;
-                this.logger.log(`Session ID: ${session.id}, Customer: ${session.customer}`);
-                
-                // TODO: Process checkout session data
-                // For example, update the client payment status in your database
-                
-                return {
-                    message: 'Stripe checkout session completed event processed successfully',
-                    success: true
-                };
+                try {
+                    this.logger.log('Stripe checkout session completed');
+                    const session = event.data.object as Stripe.Checkout.Session;
 
-            case 'payment_intent.succeeded':
-                this.logger.log('Stripe payment intent succeeded');
-                // The event.data.object will be a PaymentIntent
-                const paymentIntent = event.data.object as Stripe.PaymentIntent;
-                this.logger.log(`Payment Intent ID: ${paymentIntent.id}, Amount: ${paymentIntent.amount}`);
-                
-                // TODO: Process payment intent data
-                
-                return {
-                    message: 'Stripe payment intent succeeded event processed successfully',
-                    success: true
-                };
+                    let invoiceId = null;
+                    let hostedInvoiceUrl = null;
 
-            case 'charge.succeeded':
-                this.logger.log('Stripe charge succeeded');
-                // The event.data.object will be a Charge
-                const charge = event.data.object as Stripe.Charge;
-                this.logger.log(`Charge ID: ${charge.id}, Amount: ${charge.amount}`);
-                
-                // TODO: Process charge data
-                
-                return {
-                    message: 'Stripe charge succeeded event processed successfully',
-                    success: true
-                };
+                    if (session.invoice) {
+                        invoiceId = typeof session.invoice === 'string' ?
+                            session.invoice : session.invoice.id;
 
+                        try {
+                            const invoice = await this.stripeService.getInvoice(invoiceId);
+                            if (invoice && invoice.hosted_invoice_url) {
+                                hostedInvoiceUrl = invoice.hosted_invoice_url;
+                            }
+                        }
+                        catch (error) {
+                            this.logger.error(`Error fetching Stripe invoice: ${error.message}`);
+                            return {
+                                message: `Failed to fetch Stripe invoice: ${error.message}`,
+                                success: false
+                            };
+                        }
+                    }
+
+                    await this.webhookRepository.storeStripePayment({
+                        zohoRecordId: session.metadata?.recordId,
+                        customerId: session.customer,
+                        paymentDate: new Date(session.created * 1000),
+                        paymentStatus: session.payment_status,
+                        paymentId: session.payment_intent,
+                        payment: 'Setup Fee',
+                        amount: session.amount_total ? session.amount_total / 100 : 0,
+                        paymentSource: 'Credit Card/Debit Card',
+                        invoiceId: invoiceId,
+                        hostedInvoiceUrl: hostedInvoiceUrl,
+                        createdAt: new Date(session.created * 1000),
+                        updatedAt: new Date()
+                    });
+
+                    return {
+                        message: 'Stripe checkout session completed event processed successfully',
+                        success: true
+                    };
+                } catch (error) {
+                    this.logger.error(`Error processing Stripe checkout session: ${error.message}`);
+                    if (event?.data?.object) {
+                        this.logger.debug(`Session ID: ${(event.data.object as any).id || 'unknown'}`);
+                    }
+
+                    return {
+                        message: `Failed to process Stripe checkout session: ${error.message}`,
+                        success: false
+                    };
+                }
             default:
                 this.logger.log(`Received unhandled Stripe event type: ${eventType}`);
                 return {

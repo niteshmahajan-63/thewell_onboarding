@@ -29,6 +29,12 @@ export class StripeService {
                 }
             ],
             mode: 'payment',
+            invoice_creation: {
+                enabled: true,
+            },
+            metadata: {
+                recordId: recordId,
+            },
             success_url: `${process.env.FRONTEND_URL}/${recordId}`,
             cancel_url: `${process.env.FRONTEND_URL}/${recordId}`,
         });
@@ -76,22 +82,12 @@ export class StripeService {
         });
     }
 
-    /**
-     * Creates a subscription product and price
-     * @returns The price object for the subscription
-     */
-    private async createSubscriptionProduct(): Promise<Stripe.Price> {
-        const subscriptionProduct = await this.stripe.products.create({
-            name: 'Monthly Subscription',
-            type: 'service',
-            description: 'Description for Monthly Subscription',
-        });
-
-        return await this.stripe.prices.create({
-            unit_amount: 5000,
-            currency: 'usd',
-            recurring: { interval: 'month' },
-            product: subscriptionProduct.id,
-        });
+    async getInvoice(invoiceId: string): Promise<Stripe.Invoice> {
+        try {
+            const invoice = await this.stripe.invoices.retrieve(invoiceId);
+            return invoice;
+        } catch (error) {
+            throw new Error(`Failed to retrieve invoice: ${error.message}`);
+        }
     }
 }

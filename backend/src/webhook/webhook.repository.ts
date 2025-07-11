@@ -29,7 +29,6 @@ export class WebhookRepository {
      */
     async storeCalendlyBooking(zohoRecordId: string, payload: any): Promise<any> {
         try {
-            // Check if record already exists
             const existingBooking = await this.findCalendlyBooking(zohoRecordId);
             
             if (existingBooking) {
@@ -54,6 +53,46 @@ export class WebhookRepository {
             }
         } catch (error) {
             this.logger.error(`Error storing Calendly booking: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async findStripePayment(zohoRecordId: string): Promise<any> {
+        try {
+            return await this.prismaService.stripePayments.findUnique({
+                where: {
+                    zohoRecordId: zohoRecordId
+                }
+            });
+        } catch (error) {
+            this.logger.error(`Error finding Stripe payment: ${error.message}`);
+            return null;
+        }
+    }
+
+    async storeStripePayment(stripePaymentData: any): Promise<any> {
+        try {
+            const existingPayment = await this.findStripePayment(stripePaymentData.zohoRecordId);
+
+            if (existingPayment) {
+                this.logger.log(`Updating existing Stripe payment for zohoRecordId: ${stripePaymentData.zohoRecordId}`);
+                return await this.prismaService.stripePayments.update({
+                    where: {
+                        zohoRecordId: stripePaymentData.zohoRecordId
+                    },
+                    data: {
+                        ...stripePaymentData,
+                        updatedAt: new Date()
+                    }
+                });
+            } else {
+                this.logger.log(`Creating new Stripe payment for zohoRecordId: ${stripePaymentData.zohoRecordId}`);
+                return await this.prismaService.stripePayments.create({
+                    data: stripePaymentData
+                });
+            }
+        } catch (error) {
+            this.logger.error(`Error storing Stripe payment: ${error.message}`);
             throw error;
         }
     }

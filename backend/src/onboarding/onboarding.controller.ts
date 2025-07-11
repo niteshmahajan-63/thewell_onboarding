@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Logger, Post, Body } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import { ApiResponse, createSuccessResponse } from '../common/utils';
-import { CreateCheckoutSessionDto, GetRecordByIdDto } from './dto';
+import { CreateCheckoutSessionDto, GetRecordByIdDto, GetOnboardingStepsDto } from './dto';
 
 @Controller('api/onboarding')
 export class OnboardingController {
@@ -14,7 +14,6 @@ export class OnboardingController {
 		@Query() query: GetRecordByIdDto,
 	): Promise<ApiResponse<Record<string, any>>> {
 		const { recordId } = query;
-		this.logger.log(`Received request to fetch record: ${recordId}`);
 
 		try {
 			const data = await this.onboardingService.getRecordById(
@@ -24,6 +23,20 @@ export class OnboardingController {
 			return createSuccessResponse(data, 'Record retrieved successfully');
 		} catch (error) {
 			this.logger.error(`Failed to fetch record ${recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Get('steps')
+	async getOnboardingSteps(
+		@Query() query: GetOnboardingStepsDto
+	): Promise<ApiResponse<any[]>> {
+		const { recordId } = query;
+		try {
+			const steps = await this.onboardingService.getOnboardingSteps(recordId);
+			return createSuccessResponse(steps, 'Onboarding steps retrieved successfully');
+		} catch (error) {
+			this.logger.error(`Failed to fetch onboarding steps ${recordId ? 'for record ' + recordId : ''}:`, error.message);
 			throw error;
 		}
 	}

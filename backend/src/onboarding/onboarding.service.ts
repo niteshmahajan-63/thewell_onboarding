@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ZohoService } from './zoho.service';
-import { PrismaService } from '../common/prisma.service';
 import { StripeService } from './stripe.service';
+import { OnboardingRepository } from './onboarding.repository';
 
 @Injectable()
 export class OnboardingService {
@@ -9,7 +9,7 @@ export class OnboardingService {
 
 	constructor(
 		private readonly zohoService: ZohoService,
-		private readonly prisma: PrismaService,
+		private readonly onboardingRepository: OnboardingRepository,
 		private readonly stripeService: StripeService,
 	) { }
 
@@ -38,14 +38,13 @@ export class OnboardingService {
 		};
 
 		try {
-			// Upsert the record in the database
-			const savedClient = await this.prisma.client.upsert({
-				where: { zohoRecordId: clientData.zohoRecordId },
-				update: clientData,
-				create: clientData,
-			});
+			// Upsert the record in the database using the repository
+			const savedClient = await this.onboardingRepository.upsertClient(clientData);
 
 			this.logger.log(`Record ${recordId} saved/updated in the database with id: ${savedClient.id}`);
+			
+			// Add or update client steps based on required fields
+			await this.createOrUpdateClientSteps(zohoRecord);
 
 			// Return the combined data (with database id included)
 			return { ...zohoRecord, dbId: savedClient.id };
@@ -53,6 +52,49 @@ export class OnboardingService {
 			this.logger.error(`Failed to save/update record in database: ${error.message}`);
 			// Return the Zoho data even if database operation fails
 			return zohoRecord;
+		}
+	}
+	
+	/**
+	 * Creates or updates client steps based on the zoho record's required fields
+	 */
+	private async createOrUpdateClientSteps(zohoRecord: Record<string, any>): Promise<void> {
+		const zohoRecordId = zohoRecord.ID;
+		
+		// Define the mapping of requirements to step types to match existing records in DB
+		const requiredStepsMap = [
+			{ field: 'Agreement_Required', value: 'Yes', stepName: 'Agreement', stepTitle: 'Sign Our Service Agreement', stepType: 'agreement' },
+			{ field: 'Stripe_Required', value: 'Yes', stepName: 'Payment', stepTitle: 'Complete Your Payment', stepType: 'payment' },
+			{ field: 'Intake_Meeting_Required', value: 'Yes', stepName: 'Intake Meeting', stepTitle: 'Book Your Intake Meeting', stepType: 'meeting' },
+		];
+		
+		// Process each required step
+		for (const step of requiredStepsMap) {
+			if (zohoRecord[step.field] === step.value) {
+				// Find the step in OnboardingSteps table by name using repository
+				const onboardingStep = await this.onboardingRepository.findOnboardingStepByName(step.stepName);
+				
+				// Skip if the step is not found in the database
+				if (!onboardingStep) {
+					this.logger.warn(`OnboardingStep with name '${step.stepName}' not found in the database, skipping`);
+					continue;
+				}
+				
+				// Check if the client step already exists using repository
+				const existingClientStep = await this.onboardingRepository.findClientStep(
+					zohoRecordId,
+					onboardingStep.id
+				);
+				
+				// Create the step if it doesn't exist
+				if (!existingClientStep) {
+					await this.onboardingRepository.createClientStep(
+						zohoRecordId,
+						onboardingStep.id,
+						false
+					);
+				}
+			}
 		}
 	}
 
@@ -77,5 +119,19 @@ export class OnboardingService {
 			this.logger.error(`Failed to create checkout session for record ${recordId}: ${error.message}`);
 			throw error;
 		}
+	}
+
+	/**
+	 * Get all onboarding steps with their completion status for a specific record
+	 * @param recordId - The Zoho record ID
+	 */
+	async getOnboardingSteps(recordId?: string): Promise<any[]> {
+		if (recordId) {
+			// Return steps with completion status if recordId is provided
+			return this.onboardingRepository.findOnboardingStepsWithStatus(recordId);
+		}
+		
+		// Return all steps without completion status if no recordId is provided
+		return this.onboardingRepository.findOnboardingSteps();
 	}
 }

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class GetRecordByIdDto {
 	@IsString()
@@ -10,4 +10,10 @@ export class CreateCheckoutSessionDto {
 	@IsString()
 	@IsNotEmpty()
 	recordId: string;
+}
+
+export class GetOnboardingStepsDto {
+	@IsString()
+	@IsOptional()
+	recordId?: string;
 }

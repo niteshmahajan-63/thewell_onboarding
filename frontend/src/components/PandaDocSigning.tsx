@@ -1,27 +1,34 @@
-import { useState, useEffect } from 'react'
-import { Button } from './ui/button'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent } from './ui/card'
-import { CheckCircle, FileText, Loader2, AlertCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, FileText, Loader2 } from 'lucide-react'
+import { Button } from './ui/button'
 import pandaDocService from '../services/pandadoc'
+import type { PandaDocResponse } from '../types/pandadoc.types'
 
-const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
-	const [isDocumentSigned, setIsDocumentSigned] = useState(false)
-	const [showEmbedded, setShowEmbedded] = useState(false)
-	const [isLoading, setIsLoading] = useState(false)
-	const [documentId, setDocumentId] = useState(null)
-	const [documentUrl, setDocumentUrl] = useState(null)
-	const [error, setError] = useState(null)
-	const [configStatus, setConfigStatus] = useState(null)
-	const [documentInfo, setDocumentInfo] = useState(null) // New state for document info
+interface PandaDocSigningProps {
+	onSigningComplete: (completed: boolean, data?: any) => void;
+	documentId: string;
+}
+
+const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete, documentId: propDocumentId }) => {
+	const [isDocumentSigned, setIsDocumentSigned] = useState<boolean>(false)
+	const [showEmbedded, setShowEmbedded] = useState<boolean>(false)
+	const [isLoading, setIsLoading] = useState<boolean>(false)
+	const [documentId, setDocumentId] = useState<string | null>(null)
+	const [documentUrl, setDocumentUrl] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
+	const [_configStatus, setConfigStatus] = useState<{
+		hasApiKey: boolean;
+		isSandbox: boolean;
+		baseUrl: string;
+	} | null>(null)
+	const [_documentInfo, setDocumentInfo] = useState<PandaDocResponse | null>(null)
 
 	useEffect(() => {
-		// Check PandaDoc configuration on component mount
 		const config = pandaDocService.getConfigStatus()
 		setConfigStatus(config)
 
-		// Listen for messages from PandaDoc iframe or popup
-		const handleMessage = (event) => {
-			// More specific origin validation
+		const handleMessage = (event: MessageEvent) => {
 			if (event.origin === 'https://app.pandadoc.com' ||
 				event.origin === 'https://pandadoc.com' ||
 				event.origin.endsWith('.pandadoc.com')) {
@@ -38,7 +45,6 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 					setIsLoading(false)
 					setError(null)
 
-					// Notify parent component
 					if (onSigningComplete) {
 						onSigningComplete(true, data)
 					}
@@ -61,7 +67,6 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 		setError(null)
 
 		try {
-			// Check if PandaDoc is properly configured
 			if (!pandaDocService.isConfigured()) {
 				throw new Error('PandaDoc integration is not properly configured. Please check your environment variables.')
 			}
@@ -69,7 +74,6 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 			let currentDocumentId = documentId
 			let currentDocumentUrl = documentUrl
 
-			// Get existing document by ID
 			if (!currentDocumentId) {
 				console.log('Fetching document by ID:', propDocumentId)
 				let result = await pandaDocService.getDocumentById(propDocumentId)
@@ -77,10 +81,9 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 				let document = result.document
 				currentDocumentId = document.id
 				setDocumentId(currentDocumentId)
-				setDocumentInfo(result) // Store document info for UI display
+				setDocumentInfo(result)
 
-				// Use publicUrl from API response
-				currentDocumentUrl = result.publicUrl
+				currentDocumentUrl = result.publicUrl || null
 				if (!currentDocumentUrl) {
 					console.error('No public_url or embed_url found. Document fields:', document)
 					throw new Error('This document does not have a public or embed URL and cannot be displayed.\nStatus: ' + document.status + '\nID: ' + document.id)
@@ -101,31 +104,22 @@ const PandaDocSigning = ({ onSigningComplete, documentId: propDocumentId }) => {
 				// }
 			}
 
-			// Show document in iframe instead of popup
 			setShowEmbedded(true)
 			setTimeout(() => {
 				embedDocumentInIframe(currentDocumentUrl)
 				setIsLoading(false)
 			}, 100)
 
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error starting signing process:', error)
 			setError(error.message)
 			setIsLoading(false)
-
-			// Fallback for demo/development
-			if (error.message.includes('not properly configured')) {
-				setTimeout(() => {
-					setIsDocumentSigned(true)
-					if (onSigningComplete) {
-						onSigningComplete(true)
-					}
-				}, 2000)
-			}
 		}
 	}
 
-	const embedDocumentInIframe = (url) => {
+	const embedDocumentInIframe = (url: string | null) => {
+		if (!url) return;
+
 		const container = document.getElementById('pandadoc-container')
 		if (container) {
 			container.innerHTML = `

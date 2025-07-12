@@ -31,7 +31,11 @@ export class OnboardingRepository {
      * Find all onboarding steps
      */
     async findOnboardingSteps(): Promise<any[]> {
-        return this.prisma.onboardingSteps.findMany();
+        return this.prisma.onboardingSteps.findMany({
+            orderBy: {
+                id: 'asc',
+            },
+        });
     }
 
     /**
@@ -63,10 +67,12 @@ export class OnboardingRepository {
      * Find all onboarding steps with their completion status for a specific record
      */
     async findOnboardingStepsWithStatus(zohoRecordId: string): Promise<any[]> {
-        // First, get all onboarding steps
-        const steps = await this.prisma.onboardingSteps.findMany();
+        const steps = await this.prisma.onboardingSteps.findMany({
+            orderBy: {
+                id: 'asc',
+            },
+        });
 
-        // For each step, check if there's a corresponding client step for the zoho record
         const stepsWithStatus = await Promise.all(
             steps.map(async (step) => {
                 const clientStep = await this.prisma.clientSteps.findFirst({
@@ -76,14 +82,38 @@ export class OnboardingRepository {
                     },
                 });
 
-                return {
-                    ...step,
-                    isCompleted: clientStep ? clientStep.isCompleted : false,
-                    isRequired: !!clientStep, // If clientStep exists, the step is required
-                };
+                if (clientStep) {
+                    return {
+                        ...step,
+                        isCompleted: clientStep.isCompleted,
+                        isRequired: true,
+                    };
+                }
+                return null;
             }),
         );
 
-        return stepsWithStatus;
+        return stepsWithStatus.filter(step => step !== null);
+    }
+
+    /**
+     * Update a client step completion status
+     */
+    async updateStepCompletionStatus(zohoRecordId: string, stepId: number, isCompleted: boolean = true): Promise<any> {
+        const clientStep = await this.findClientStep(zohoRecordId, stepId);
+
+        if (!clientStep) {
+            this.logger.warn(`No client step found for record ${zohoRecordId} and step ${stepId}`);
+            return null;
+        }
+
+        return this.prisma.clientSteps.update({
+            where: {
+                id: clientStep.id,
+            },
+            data: {
+                isCompleted,
+            },
+        });
     }
 }

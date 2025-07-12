@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from './ui/button'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
-import onboardingAPI from '../services/onboarding-api'
+import { getCheckoutSession } from '../services/onboardingService'
+import type { CheckoutSessionRequest } from '../types/onboarding.types'
 
-const StripeCheckout = ({ onNext }) => {
+const StripeCheckout: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState(null)
+    const [error, setError] = useState<string | null>(null)
     const { recordId } = useOnboardingContext()
 
     const handleCheckout = async () => {
@@ -13,9 +14,18 @@ const StripeCheckout = ({ onNext }) => {
         setError(null)
         
         try {
-            const checkoutUrl = await onboardingAPI.getCheckoutSession(recordId)
-
-            window.open(checkoutUrl, '_self')
+            if (!recordId) {
+                throw new Error('Record ID is missing');
+            }
+            
+            const request: CheckoutSessionRequest = { recordId }
+            const response = await getCheckoutSession(request)
+            
+            if (response.data.sessionUrl) {
+                window.open(response.data.sessionUrl, '_self')
+            } else {
+                throw new Error('No checkout session URL returned')
+            }
             
         } catch (err) {
             setError('Failed to initialize payment process. Please try again.')

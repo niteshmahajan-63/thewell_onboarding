@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react'
-import { InlineWidget } from "react-calendly";
+import React, { useEffect, useState } from 'react'
+import { InlineWidget } from 'react-calendly';
 
-const CalendlyBooking = ({ onBookingComplete, recordId }) => {
+// Define props interface for the component
+interface CalendlyBookingProps {
+    onBookingComplete: () => void;
+    recordId: string;
+}
+
+const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ onBookingComplete, recordId }) => {
     const [isBookingComplete, setIsBookingComplete] = useState(false)
 
     useEffect(() => {
-        const handler = (e) => {
+        const handler = (e: MessageEvent) => {
             if (e.data?.event === 'calendly.event_scheduled') {
                 setIsBookingComplete(true);
                 onBookingComplete();
@@ -16,8 +22,7 @@ const CalendlyBooking = ({ onBookingComplete, recordId }) => {
         return () => {
             window.removeEventListener('message', handler);
         };
-    }, [onBookingComplete, recordId, setIsBookingComplete, isBookingComplete,
-    ]);
+    }, [onBookingComplete]);
 
     if (isBookingComplete) {
         return (

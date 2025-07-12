@@ -1,52 +1,6 @@
-# The Well - Onboarding Application
+# React + TypeScript + Vite
 
-A React + Vite application for client onboarding with PandaDoc integration for document signing.
-
-## Features
-
-- Multi-step onboarding flow
-- PandaDoc integration for document signing
-- Responsive design with Tailwind CSS
-- Modern UI components
-
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Configure PandaDoc integration (see below)
-4. Run the development server: `npm run dev`
-
-## PandaDoc Integration Setup
-
-The application integrates with PandaDoc for document signing. To set up:
-
-### 1. PandaDoc Account Setup
-- Sign up at [PandaDoc](https://www.pandadoc.com/)
-- Create a workspace
-- Generate an API key from Settings > Integrations > API
-
-### 2. Document Template
-- Create a document template in PandaDoc
-- Include template variables: `{{client_name}}`, `{{client_email}}`, `{{agreement_date}}`
-- Note the template ID
-
-### 3. Environment Configuration
-Copy `.env.example` to `.env.development` and fill in your PandaDoc credentials:
-
-```bash
-VITE_PANDADOC_API_KEY=your_api_key_here
-VITE_PANDADOC_SANDBOX_MODE=true
-```
-
-### 4. Features
-- ✅ Document creation from templates
-- ✅ Popup signing flow
-- ✅ Embedded document preview
-- ✅ Real-time signing status updates
-- ✅ Error handling and validation
-- ✅ Sandbox/Production mode support
-
-## Development
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
 
@@ -55,4 +9,61 @@ Currently, two official plugins are available:
 
 ## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      ...tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      ...tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      ...tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```

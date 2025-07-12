@@ -134,4 +134,36 @@ export class OnboardingService {
 		// Return all steps without completion status if no recordId is provided
 		return this.onboardingRepository.findOnboardingSteps();
 	}
+	
+	/**
+	 * Mark a specific step as completed for a client
+	 * @param zohoRecordId - The Zoho record ID
+	 * @param stepId - The ID of the onboarding step
+	 */
+	async completeStep(zohoRecordId: string, stepId: number): Promise<any> {
+		this.logger.log(`Marking step ${stepId} as complete for record: ${zohoRecordId}`);
+		
+		try {
+			// Check if the step exists
+			const steps = await this.onboardingRepository.findOnboardingSteps();
+			const stepExists = steps.some(step => step.id === stepId);
+			
+			if (!stepExists) {
+				throw new Error(`Step with ID ${stepId} does not exist`);
+			}
+			
+			// Update step completion status
+			const updatedClientStep = await this.onboardingRepository.updateStepCompletionStatus(zohoRecordId, stepId);
+			
+			if (!updatedClientStep) {
+				throw new Error(`Step with ID ${stepId} not found for client with Zoho record ID ${zohoRecordId}`);
+			}
+			
+			this.logger.log(`Successfully marked step ${stepId} as complete for record: ${zohoRecordId}`);
+			return updatedClientStep;
+		} catch (error) {
+			this.logger.error(`Failed to mark step ${stepId} as complete for record ${zohoRecordId}: ${error.message}`);
+			throw error;
+		}
+	}
 }

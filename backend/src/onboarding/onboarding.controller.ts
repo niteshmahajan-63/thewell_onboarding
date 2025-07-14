@@ -9,34 +9,21 @@ export class OnboardingController {
 
 	constructor(private readonly onboardingService: OnboardingService) { }
 
-	@Get('record')
-	async getRecordById(
-		@Query() query: GetRecordByIdDto,
-	): Promise<ApiResponse<Record<string, any>>> {
+	@Get('get-record')
+	async getRecordWithSteps(
+		@Query() query: GetRecordByIdDto
+	): Promise<ApiResponse<{ record: Record<string, any>, steps: any[] }>> {
 		const { recordId } = query;
 
 		try {
-			const data = await this.onboardingService.getRecordById(
-				recordId,
+			const result = await this.onboardingService.getRecordWithSteps(recordId);
+
+			return createSuccessResponse(
+				result,
+				'Record and onboarding steps retrieved successfully'
 			);
-
-			return createSuccessResponse(data, 'Record retrieved successfully');
 		} catch (error) {
-			this.logger.error(`Failed to fetch record ${recordId}:`, error.message);
-			throw error;
-		}
-	}
-
-	@Get('steps')
-	async getOnboardingSteps(
-		@Query() query: GetOnboardingStepsDto
-	): Promise<ApiResponse<any[]>> {
-		const { recordId } = query;
-		try {
-			const steps = await this.onboardingService.getOnboardingSteps(recordId);
-			return createSuccessResponse(steps, 'Onboarding steps retrieved successfully');
-		} catch (error) {
-			this.logger.error(`Failed to fetch onboarding steps ${recordId ? 'for record ' + recordId : ''}:`, error.message);
+			this.logger.error(`Failed to fetch record with steps for ${recordId}:`, error.message);
 			throw error;
 		}
 	}

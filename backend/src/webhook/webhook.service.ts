@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { CalendlyWebhookPayload } from './dto/calendly.dto';
 import { WebhookRepository } from './webhook.repository';
 import Stripe from 'stripe';
-import { StripeService } from '../onboarding/stripe.service';
+import { StripeService } from '../services/stripe.service';
 
 @Injectable()
 export class WebhookService {

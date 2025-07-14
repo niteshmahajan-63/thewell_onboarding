@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getOnboardingByRecordId, getOnboardingSteps } from '../services/onboardingService'
+import { getOnboardingByRecordId } from '../services/onboardingService'
 import type { OnboardingStep, OnboardingRecord } from '../types/onboarding.types'
 import pandaDocService from '../services/pandadoc'
 
@@ -12,21 +12,6 @@ export const useOnboarding = (recordId: string) => {
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
     const [steps, setSteps] = useState<OnboardingStep[]>([])
 
-    useEffect(() => {
-        const fetchSteps = async () => {
-            if (recordId) {
-                try {
-                    const response = await getOnboardingSteps(recordId)
-                    setSteps(response.data)
-                } catch (err) {
-                    console.error('Failed to fetch onboarding steps:', err)
-                    setError(err instanceof Error ? err.message : 'Failed to fetch onboarding steps')
-                }
-            }
-        }
-        fetchSteps()
-    }, [recordId])
-
     const loadOnboardingData = useCallback(async () => {
         if (!recordId || recordId.trim() === '') return
 
@@ -35,12 +20,14 @@ export const useOnboarding = (recordId: string) => {
             setError(null)
 
             const response = await getOnboardingByRecordId(recordId)
-            const onboardingData = response.data
+            const record = response.data.record
+            const steps = response.data.steps
 
-            setOnboardingConfig(onboardingData)
+            setOnboardingConfig(record)
+            setSteps(steps)
 
-            if (onboardingData.PandaDoc_ID) {
-                setDocumentId(onboardingData.PandaDoc_ID)
+            if (record.PandaDoc_ID) {
+                setDocumentId(record.PandaDoc_ID)
             }
 
         } catch (error) {

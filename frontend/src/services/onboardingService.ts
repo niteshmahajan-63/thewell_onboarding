@@ -1,42 +1,9 @@
-import type { CheckoutSessionRequest, CheckoutSessionResponse, CompleteStepRequest, CompleteStepResponse, OnboardingRecordResponse, OnboardingStepsResponse } from "../types/onboarding.types";
+import type { CheckoutSessionRequest, CheckoutSessionResponse, CompleteStepRequest, CompleteStepResponse, OnboardingRecordResponse } from "../types/onboarding.types";
 import api from "./api";
-
-
-export const getOnboardingSteps = async (recordId?: string): Promise<OnboardingStepsResponse> => {
-    try {
-        const url = `/onboarding/steps?recordId=${recordId}`
-        const response = await api.get<OnboardingStepsResponse>(url);
-
-        if (!response.data.success) {
-            const errorMessage = response.data.message || "Failed to fetch steps";
-            throw new Error(errorMessage);
-        }
-
-        return response.data;
-    } catch (error: any) {
-        if (error.response?.data) {
-            const apiError = error.response.data;
-            if (!apiError.success) {
-                const errorMessage = apiError.message || "Failed to fetch steps";
-                throw new Error(errorMessage);
-            }
-        }
-
-        let message = "Something went wrong while fetching steps";
-        if (error instanceof Error) {
-            message = error.message;
-        } else if (typeof error === "string") {
-            message = error;
-        } else if (typeof error === "object" && error !== null && "message" in error) {
-            message = (error as { message: string }).message;
-        }
-        throw new Error(message);
-    }
-};
 
 export const getOnboardingByRecordId = async (recordId?: string): Promise<OnboardingRecordResponse> => {
     try {
-        const url = `/onboarding/record?recordId=${recordId}`
+        const url = `/onboarding/get-record?recordId=${recordId}`
         const response = await api.get<OnboardingRecordResponse>(url);
 
         if (!response.data.success) {

@@ -1,11 +1,3 @@
-export interface OnboardingStepsResponse {
-    success: boolean;
-    message: string;
-    timestamp: string;
-    statusCode: number;
-    data: OnboardingStep[];
-}
-
 export interface OnboardingStep {
     id: string;
     title: string;
@@ -20,7 +12,10 @@ export interface OnboardingRecordResponse {
     message: string;
     timestamp: string;
     statusCode: number;
-    data: OnboardingRecord;
+    data: {
+        record: OnboardingRecord,
+        steps: OnboardingStep[]
+    };
 }
 
 export interface OnboardingRecord {

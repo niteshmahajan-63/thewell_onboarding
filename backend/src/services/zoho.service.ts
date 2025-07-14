@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ZohoConfig } from '../config/zoho.config';
-import { ZohoTokenResponse, ZohoRecordResponse } from './dto/zoho-response.dto';
+import { ZohoRecordResponse, ZohoTokenResponse } from '../onboarding/dto/zoho-response.dto';
 
 @Injectable()
 export class ZohoService {

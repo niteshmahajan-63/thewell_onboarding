@@ -1,55 +1,41 @@
 import React, { useEffect, useState } from 'react'
 import { Card, CardContent } from './ui/card'
-import { AlertCircle, CheckCircle, FileText, Loader2 } from 'lucide-react'
+import { AlertCircle, FileText, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
-import pandaDocService from '../services/pandadoc'
-import type { PandaDocResponse } from '../types/pandadoc.types'
+import { useOnboardingContext } from '../contexts/OnboardingContext'
 
 interface PandaDocSigningProps {
 	onSigningComplete: (completed: boolean, data?: any) => void;
-	documentId: string;
 }
 
-const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete, documentId: propDocumentId }) => {
-	const [isDocumentSigned, setIsDocumentSigned] = useState<boolean>(false)
+const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete }) => {
+	const { pandaDocSessionId } = useOnboardingContext()
+	const [error, setError] = useState<string | null>(null)
 	const [showEmbedded, setShowEmbedded] = useState<boolean>(false)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
-	const [documentId, setDocumentId] = useState<string | null>(null)
-	const [documentUrl, setDocumentUrl] = useState<string | null>(null)
-	const [error, setError] = useState<string | null>(null)
-	const [_configStatus, setConfigStatus] = useState<{
-		hasApiKey: boolean;
-		isSandbox: boolean;
-		baseUrl: string;
-	} | null>(null)
-	const [_documentInfo, setDocumentInfo] = useState<PandaDocResponse | null>(null)
 
 	useEffect(() => {
-		const config = pandaDocService.getConfigStatus()
-		setConfigStatus(config)
-
 		const handleMessage = (event: MessageEvent) => {
+			// Check if the message is from PandaDoc
 			if (event.origin === 'https://app.pandadoc.com' ||
 				event.origin === 'https://pandadoc.com' ||
 				event.origin.endsWith('.pandadoc.com')) {
 
 				const { type, data } = event.data || {}
 
-				console.log('PandaDoc message received:', { type, data })
-
+				// Handle document completion event
 				if (type === 'document_completed' ||
 					type === 'document_signed' ||
 					type === 'session_view.document.completed') {
-					setIsDocumentSigned(true)
-					setShowEmbedded(false)
 					setIsLoading(false)
-					setError(null)
-
 					if (onSigningComplete) {
 						onSigningComplete(true, data)
 					}
 				} else if (type === 'session_view.document.exception' || type === 'error') {
+					setIsLoading(false)
 					setError(data?.message || 'An error occurred during signing')
+				} else if (type === 'session_view.document.loaded') {
+					// Document has loaded in the iframe
 					setIsLoading(false)
 				}
 			}
@@ -62,103 +48,33 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete, do
 		}
 	}, [onSigningComplete])
 
-	const handleStartSigning = async () => {
-		setIsLoading(true)
-		setError(null)
-
-		try {
-			if (!pandaDocService.isConfigured()) {
-				throw new Error('PandaDoc integration is not properly configured. Please check your environment variables.')
-			}
-
-			let currentDocumentId = documentId
-			let currentDocumentUrl = documentUrl
-
-			if (!currentDocumentId) {
-				console.log('Fetching document by ID:', propDocumentId)
-				let result = await pandaDocService.getDocumentById(propDocumentId)
-
-				let document = result.document
-				currentDocumentId = document.id
-				setDocumentId(currentDocumentId)
-				setDocumentInfo(result)
-
-				currentDocumentUrl = result.publicUrl || null
-				if (!currentDocumentUrl) {
-					console.error('No public_url or embed_url found. Document fields:', document)
-					throw new Error('This document does not have a public or embed URL and cannot be displayed.\nStatus: ' + document.status + '\nID: ' + document.id)
-				}
-				setDocumentUrl(currentDocumentUrl)
-
-				// Always show the document, even if completed
-				console.log('Document status:', document.status)
-				// TODO: uncomment this if you want to handle already completed documents
-				// if (result.isCompleted) {
-				// 	console.log('Document is already completed, marking as signed')
-				// 	setIsDocumentSigned(true)
-				// 	// Trigger completion callback immediately
-				// 	if (onSigningComplete) {
-				// 		onSigningComplete(true, { documentId: currentDocumentId })
-				// 	}
-				// 	return // Don't proceed to show the document
-				// }
-			}
-
-			setShowEmbedded(true)
-			setTimeout(() => {
-				embedDocumentInIframe(currentDocumentUrl)
-				setIsLoading(false)
-			}, 100)
-
-		} catch (error: any) {
-			console.error('Error starting signing process:', error)
-			setError(error.message)
-			setIsLoading(false)
-		}
-	}
-
-	const embedDocumentInIframe = (url: string | null) => {
-		if (!url) return;
-
-		const container = document.getElementById('pandadoc-container')
-		if (container) {
-			container.innerHTML = `
-        <iframe 
-          src="${url}" 
-          width="100%" 
-          height="800" 
-          frameborder="0"
-          title="Service Agreement"
-          class="w-full rounded-lg"
-          allow="camera; microphone; fullscreen">
-        </iframe>
-      `
-		}
-	}
-
-	if (isDocumentSigned) {
+	// If there's an error, display it
+	if (error) {
 		return (
-			<Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 max-w-lg mx-auto">
-				<CardContent className="p-8 text-center space-y-6">
-					<div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-						<CheckCircle className="w-12 h-12 text-green-600" />
+			<Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 mb-4">
+				<CardContent className="p-4 text-center space-y-2">
+					<div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+						<AlertCircle className="w-6 h-6 text-red-600" />
 					</div>
-					<div className="space-y-3">
-						<h3 className="text-green-800 font-bold text-xl">
-							Document signed successfully!
-						</h3>
-						<p className="text-green-700">
-							Your service agreement has been completed. You can now proceed to the next step.
-						</p>
-						{documentId && (
-							<p className="text-green-600 text-sm">
-								Document ID: {documentId}
-							</p>
-						)}
+					<div className="space-y-1">
+						<h4 className="text-red-800 font-semibold">Error</h4>
+						<p className="text-red-700 text-sm">{error}</p>
 					</div>
 				</CardContent>
 			</Card>
 		)
+	}
+
+	// Handle button click to load document
+	const handleStartSigning = () => {
+		setIsLoading(true)
+		setError(null)
+		setShowEmbedded(true)
+	}
+
+	// Handle iframe loading completion as a backup
+	const handleIframeLoad = () => {
+		setIsLoading(false)
 	}
 
 	return (
@@ -169,27 +85,6 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete, do
 					Please review and sign our service agreement to begin your journey with The Well.
 				</p>
 			</div>
-
-			{error && (
-				<Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 mb-4">
-					<CardContent className="p-4 text-center space-y-2">
-						<div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-							<AlertCircle className="w-6 h-6 text-red-600" />
-						</div>
-						<div className="space-y-1">
-							<h4 className="text-red-800 font-semibold">Error</h4>
-							<p className="text-red-700 text-sm">{error}</p>
-						</div>
-						<Button
-							variant="outline"
-							onClick={() => setError(null)}
-							className="border-red-300 text-red-700 hover:bg-red-50"
-						>
-							Dismiss
-						</Button>
-					</CardContent>
-				</Card>
-			)}
 
 			{isLoading && (
 				<div className="flex justify-center items-center py-4 mb-4">
@@ -225,7 +120,16 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete, do
 			{showEmbedded && (
 				<Card className="bg-white border-gray-200 shadow-lg w-full mt-0">
 					<CardContent className="p-0">
-						<div id="pandadoc-container" className="w-full rounded-lg overflow-hidden bg-gray-50"></div>
+						<iframe
+							src={`https://app.pandadoc.com/s/${pandaDocSessionId}/`}
+							width="100%"
+							height="800"
+							frameBorder="0"
+							title="Service Agreement"
+							className="w-full rounded-lg"
+							allow="camera; microphone; fullscreen"
+							onLoad={handleIframeLoad}
+						/>
 					</CardContent>
 				</Card>
 			)}

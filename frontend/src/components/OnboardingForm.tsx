@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import PandaDocSigning from './PandaDocSigning'
 import StripeCheckout from './StripeCheckout'
 import CalendlyBooking from './CalendlyBooking'
+import { completeStep } from '../services/onboardingService'
 
 interface Step {
     id: string | number;
@@ -15,26 +16,33 @@ interface OnboardingFormProps {
     currentStep: number;
     steps: Step[];
     setCurrentStep: (step: number) => void;
-    documentId: string | null;
+    pandaDocSessionId: string | null;
     recordId: string;
+    completedSteps: Set<string>;
+    setCompletedSteps: (steps: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
 }
 
-const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentStep, steps, setCurrentStep, documentId, recordId }) => {
+const OnboardingForm: React.FC<OnboardingFormProps> = ({
+    currentStep,
+    steps,
+    setCurrentStep,
+    pandaDocSessionId,
+    recordId,
+    completedSteps,
+    setCompletedSteps
+}) => {
     const [stepCompleting, setStepCompleting] = useState(false)
 
-    // Find the current step object
     const getCurrentStepObject = () => {
-        return steps.find(step => step.id === currentStep)
+        return steps.find(step => String(step.id) === String(currentStep))
     }
 
-    // Find the next step
     const getNextStep = () => {
-        const currentIndex = steps.findIndex(step => step.id === currentStep)
+        const currentIndex = steps.findIndex(step => String(step.id) === String(currentStep))
         return currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null
     }
 
     const handleStepComplete = (_stepData = {}) => {
-        // The stepData parameter is currently unused but kept for future use
         setStepCompleting(true)
 
         setTimeout(() => {
@@ -46,16 +54,46 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentStep, steps, set
         }, 1500)
     }
 
-    const handlePandaDocComplete = (isComplete: boolean, data?: any) => {
+    const handlePandaDocComplete = async (isComplete: boolean, data?: any) => {
         if (isComplete) {
-            console.log('Document signed successfully:', data)
-            handleStepComplete(data)
+            try {
+                await completeStep({
+                    zohoRecordId: recordId,
+                    stepId: currentStep
+                });
+
+                const currentStepId = String(currentStep);
+
+                setCompletedSteps(prevCompletedSteps => {
+                    const newCompletedSteps = new Set(prevCompletedSteps);
+                    newCompletedSteps.add(currentStepId);
+                    return newCompletedSteps;
+                });
+
+                handleStepComplete(data);
+            } catch (error) {
+                console.error('Error completing step:', error);
+                handleStepComplete(data);
+            }
         }
     }
 
     const handleCalendlyComplete = () => {
         handleStepComplete()
     }
+
+    useEffect(() => {
+        const currentStepId = String(currentStep);
+
+        if (completedSteps && completedSteps.has(currentStepId)) {
+            const nextStep = getNextStep();
+            if (nextStep) {
+                setTimeout(() => {
+                    setCurrentStep(Number(nextStep.id));
+                }, 300);
+            }
+        }
+    }, [currentStep, completedSteps, setCurrentStep, getNextStep, steps]);
 
     const currentStepObject = getCurrentStepObject()
     const isLastStep = !getNextStep()
@@ -79,14 +117,13 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({ currentStep, steps, set
                 <CardContent className={`p-6 ${currentStepObject.type === 'meeting' ? 'min-h-[850px]' : 'min-h-[400px]'} flex items-center justify-center bg-white w-full`}>
 
                     {/* Agreement Step */}
-                    {currentStepObject.type === 'agreement' && !stepCompleting && documentId && (
+                    {currentStepObject.type === 'agreement' && !stepCompleting && pandaDocSessionId && (
                         <PandaDocSigning
                             onSigningComplete={handlePandaDocComplete}
-                            documentId={documentId}
                         />
                     )}
 
-                    {currentStepObject.type === 'agreement' && !stepCompleting && !documentId && (
+                    {currentStepObject.type === 'agreement' && !stepCompleting && !pandaDocSessionId && (
                         <div className="text-center py-16">
                             <div className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-xl p-12 max-w-md mx-auto">
                                 <p className="text-lg text-gray-300">Loading document...</p>

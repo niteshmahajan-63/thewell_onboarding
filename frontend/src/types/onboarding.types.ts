@@ -14,7 +14,8 @@ export interface OnboardingRecordResponse {
     statusCode: number;
     data: {
         record: OnboardingRecord,
-        steps: OnboardingStep[]
+        steps: OnboardingStep[],
+        pandadoc_session_id: string;
     };
 }
 
@@ -51,7 +52,7 @@ export interface CheckoutSessionResponse {
 }
 
 export interface CompleteStepRequest {
-    recordId: string;
+    zohoRecordId: string;
     stepId: number;
 }
 

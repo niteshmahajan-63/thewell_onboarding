@@ -173,19 +173,23 @@ export class OnboardingService {
 	 * Get both record data and onboarding steps in a single operation
 	 * @param recordId - The Zoho record ID
 	 */
-	async getRecordWithSteps(recordId: string): Promise<{ record: Record<string, any>, steps: any[] }> {
+	async getRecordWithSteps(recordId: string): Promise<{ record: Record<string, any>, steps: any[], pandadoc_session_id: string }> {
 		this.logger.log(`Fetching record data and steps for record: ${recordId}`);
 
 		try {
-			// First get the record data since getOnboardingSteps depends on it
 			const record = await this.getRecordById(recordId);
-			// const url = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
-			// console.log(url);
 
-			// Then get the onboarding steps using the record data
+			const pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+
+			const shared_link = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
+			if (shared_link !== false) {
+				// await this.zohoService.updateRecord(recordId, { Sender_PandaDoc_URL: shared_link });
+				await this.completeStep(recordId, 1);
+			}
+
 			const steps = await this.getOnboardingSteps(recordId);
 
-			return { record, steps };
+			return { record, steps, pandadoc_session_id };
 		} catch (error) {
 			this.logger.error(`Failed to fetch record with steps for ${recordId}: ${error.message}`);
 			throw error;

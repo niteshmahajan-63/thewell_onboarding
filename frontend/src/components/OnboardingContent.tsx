@@ -10,7 +10,8 @@ const OnboardingContent: React.FC = () => {
 		currentStep,
 		setCurrentStep,
 		completedSteps,
-		documentId,
+		setCompletedSteps,
+		pandaDocSessionId,
 		isLoading,
 		error,
 		onboardingConfig,
@@ -72,8 +73,10 @@ const OnboardingContent: React.FC = () => {
 				currentStep={currentStep}
 				steps={steps}
 				setCurrentStep={setCurrentStep}
-				documentId={documentId}
+				pandaDocSessionId={pandaDocSessionId}
 				recordId={recordId}
+				completedSteps={completedSteps}
+				setCompletedSteps={setCompletedSteps}
 			/>
 		</div>
 	)

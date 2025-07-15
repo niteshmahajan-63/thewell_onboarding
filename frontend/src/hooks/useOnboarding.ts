@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getOnboardingByRecordId } from '../services/onboardingService'
 import type { OnboardingStep, OnboardingRecord } from '../types/onboarding.types'
-import pandaDocService from '../services/pandadoc'
 
 export const useOnboarding = (recordId: string) => {
     const [currentStep, setCurrentStep] = useState(1)
-    const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
-    const [documentId, setDocumentId] = useState<string | null>(null)
+    const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
+    const [pandaDocSessionId, setPandaDocSessionId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
@@ -22,13 +21,22 @@ export const useOnboarding = (recordId: string) => {
             const response = await getOnboardingByRecordId(recordId)
             const record = response.data.record
             const steps = response.data.steps
+            const pandadoc_session_id = response.data.pandadoc_session_id
 
             setOnboardingConfig(record)
             setSteps(steps)
-
-            if (record.PandaDoc_ID) {
-                setDocumentId(record.PandaDoc_ID)
-            }
+            setPandaDocSessionId(pandadoc_session_id)
+            
+            const completedStepIds = new Set<string>()
+            steps.forEach(step => {
+                if (step.isCompleted) {
+                    const stepId = String(step.id);
+                    console.log(`Adding completed step to set: ${stepId}`);
+                    completedStepIds.add(stepId);
+                }
+            })
+            console.log('Setting completedSteps:', Array.from(completedStepIds));
+            setCompletedSteps(completedStepIds)
 
         } catch (error) {
             console.error('Failed to load onboarding data:', error)
@@ -38,49 +46,9 @@ export const useOnboarding = (recordId: string) => {
         }
     }, [recordId])
 
-    const checkDocumentStatus = useCallback(async () => {
-        if (!documentId || completedSteps.has(1)) {
-            return;
-        }
-
-        try {
-            if (!pandaDocService.isConfigured()) {
-                console.log('PandaDoc service is not configured');
-                return;
-            }
-
-            const result = await pandaDocService.getDocumentById(documentId);
-
-            if (result.isCompleted) {
-                console.log('Document is already completed on page load');
-
-                setCompletedSteps(prevSteps => {
-                    const newSteps = new Set(prevSteps);
-                    newSteps.add(1);
-                    return newSteps;
-                });
-
-                setCurrentStep(currentStepValue =>
-                    currentStepValue === 1 ? 2 : currentStepValue
-                );
-            } else {
-                console.log('Document is not yet completed, status:', result.document.status);
-            }
-        } catch (error) {
-            console.error('Error checking document status:',
-                error instanceof Error ? error.message : 'Unknown error');
-        }
-    }, [documentId, completedSteps])
-
     useEffect(() => {
         loadOnboardingData()
     }, [loadOnboardingData])
-
-    useEffect(() => {
-        if (documentId) {
-            checkDocumentStatus()
-        }
-    }, [documentId, checkDocumentStatus])
 
     return {
         recordId,
@@ -88,12 +56,11 @@ export const useOnboarding = (recordId: string) => {
         setCurrentStep,
         completedSteps,
         setCompletedSteps,
-        documentId,
+        pandaDocSessionId,
         isLoading,
         error,
         onboardingConfig,
         steps,
         loadOnboardingData,
-        checkDocumentStatus
     }
 }

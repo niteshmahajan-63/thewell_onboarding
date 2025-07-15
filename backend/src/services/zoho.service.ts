@@ -167,4 +167,59 @@ export class ZohoService {
 			throw new InternalServerErrorException('Failed to fetch record from Zoho Creator');
 		}
 	}
+
+	async updateRecord(
+		recordId: string,
+		data: Record<string, any>,
+	): Promise<Record<string, any>> {
+		try {
+			const accessToken = await this.getAccessToken();
+			const { creatorUrl, applicationName, reportName, accountOwnerName } = this.zohoConfig;
+
+			const url = `${creatorUrl}/creator/v2.1/data/${accountOwnerName}/${applicationName}/report/${reportName}/${recordId}`;
+
+			this.logger.log(`Updating record with ID: ${recordId} in ${reportName} of ${applicationName}`);
+
+			const response = await firstValueFrom(
+				this.httpService.put<ZohoRecordResponse>(url, { data }, {
+					headers: {
+						'Authorization': `Zoho-oauthtoken ${accessToken}`,
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+					},
+				}),
+			);
+
+			if (response.data.code !== 3000) {
+				this.logger.error(`Zoho API error: ${response.data.message}`);
+				throw new BadRequestException(`Failed to update record: ${response.data.message}`);
+			}
+
+			this.logger.log(`Successfully updated record with ID: ${recordId}`);
+			return response.data.data;
+		} catch (error) {
+			if (error instanceof BadRequestException) {
+				throw error;
+			}
+
+			const { applicationName, reportName } = this.zohoConfig;
+
+			this.logger.error('Error updating record in Zoho Creator', {
+				recordId,
+				reportName,
+				applicationName,
+				error: error.response?.data || error.message,
+			});
+
+			if (error.response?.status === 401) {
+				throw new InternalServerErrorException('Authentication failed with Zoho Creator');
+			}
+
+			if (error.response?.status === 404) {
+				throw new BadRequestException('Record not found or invalid parameters');
+			}
+
+			throw new InternalServerErrorException('Failed to update record in Zoho Creator');
+		}
+	}
 }

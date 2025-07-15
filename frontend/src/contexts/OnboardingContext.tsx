@@ -7,15 +7,14 @@ interface OnboardingContextType {
   recordId: string
   currentStep: number
   setCurrentStep: (step: number) => void
-  completedSteps: Set<number>
-  setCompletedSteps: (steps: Set<number> | ((prev: Set<number>) => Set<number>)) => void
-  documentId: string | null
+  completedSteps: Set<string>
+  setCompletedSteps: (steps: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+  pandaDocSessionId: string | null
   isLoading: boolean
   error: string | null
   onboardingConfig: OnboardingRecord | null
   steps: OnboardingStep[]
   loadOnboardingData: () => Promise<void>
-  checkDocumentStatus: () => Promise<void>
 }
 
 interface OnboardingProviderProps {

@@ -67,11 +67,11 @@ export const getCheckoutSession = async (checkoutSessionRequest: CheckoutSession
 
 export const completeStep = async (completeStepRequest: CompleteStepRequest): Promise<CompleteStepResponse> => {
     try {
-        const url = `/onboarding/create-checkout-session`
+        const url = `/onboarding/complete-step`
         const response = await api.post<CompleteStepResponse>(url, completeStepRequest);
 
         if (!response.data.success) {
-            const errorMessage = response.data.message || "Failed to create checkout session";
+            const errorMessage = response.data.message || "Failed to complete step";
             throw new Error(errorMessage);
         }
 
@@ -80,12 +80,12 @@ export const completeStep = async (completeStepRequest: CompleteStepRequest): Pr
         if (error.response?.data) {
             const apiError = error.response.data;
             if (!apiError.success) {
-                const errorMessage = apiError.message || "Failed to create checkout session";
+                const errorMessage = apiError.message || "Failed to complete step";
                 throw new Error(errorMessage);
             }
         }
 
-        let message = "Something went wrong while creating checkout session";
+        let message = "Something went wrong while completing step";
         if (error instanceof Error) {
             message = error.message;
         } else if (typeof error === "string") {

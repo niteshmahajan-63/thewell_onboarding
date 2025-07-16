@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Logger, Post, Body } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import { ApiResponse, createSuccessResponse } from '../common/utils';
-import { CreateCheckoutSessionDto, GetRecordByIdDto, GetOnboardingStepsDto, CompleteStepDto } from './dto';
+import { CreateCheckoutSessionDto, GetRecordByIdDto, GetOnboardingStepsDto, CompleteStepDto, CreatePaymentIntentDto } from './dto';
 
 @Controller('api/onboarding')
 export class OnboardingController {
@@ -69,6 +69,19 @@ export class OnboardingController {
 			return createSuccessResponse(result, 'Step marked as completed successfully');
 		} catch (error) {
 			this.logger.error(`Failed to mark step ${completeStepDto.stepId} as complete for record ${completeStepDto.zohoRecordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Post('create-payment-intent')
+	async createPaymentIntent(
+		@Body() paymentIntentDto: CreatePaymentIntentDto,
+	): Promise<ApiResponse<{ clientSecret: string, paymentIntentId: string }>> {
+		try {
+			const paymentIntent = await this.onboardingService.createPaymentIntent(paymentIntentDto.recordId);
+			return createSuccessResponse(paymentIntent, 'Payment intent created successfully');
+		} catch (error) {
+			this.logger.error(`Failed to create payment intent for record ${paymentIntentDto.recordId}:`, error.message);
 			throw error;
 		}
 	}

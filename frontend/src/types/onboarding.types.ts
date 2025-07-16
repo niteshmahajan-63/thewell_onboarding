@@ -68,3 +68,18 @@ export interface CompleteStepResponse {
         isCompleted: boolean;
     };
 }
+
+export interface PaymentIntentRequest {
+    recordId: string;
+}
+
+export interface PaymentIntentResponse {
+    success: boolean;
+    message: string;
+    timestamp: string;
+    statusCode: number;
+    data: {
+        clientSecret: string;
+        paymentIntentId: string;
+    };
+}

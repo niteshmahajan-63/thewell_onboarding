@@ -107,6 +107,13 @@ export class OnboardingRepository {
             return null;
         }
 
+        if (stepId === 1 && isCompleted) {
+            await this.prisma.client.update({
+                where: { zohoRecordId },
+                data: { pandadocAgreementCompleted: "Yes" },
+            })
+        }
+
         return this.prisma.clientSteps.update({
             where: {
                 id: clientStep.id,
@@ -114,6 +121,15 @@ export class OnboardingRepository {
             data: {
                 isCompleted,
             },
+        });
+    }
+
+    /**
+     * Find a record by its ID
+     */
+    async findRecordById(recordId: string): Promise<any> {
+        return this.prisma.client.findUnique({
+            where: { zohoRecordId: recordId },
         });
     }
 }

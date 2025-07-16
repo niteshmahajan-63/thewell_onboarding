@@ -1,4 +1,12 @@
-import type { CheckoutSessionRequest, CheckoutSessionResponse, CompleteStepRequest, CompleteStepResponse, OnboardingRecordResponse } from "../types/onboarding.types";
+import type { 
+    CheckoutSessionRequest, 
+    CheckoutSessionResponse, 
+    CompleteStepRequest, 
+    CompleteStepResponse, 
+    OnboardingRecordResponse,
+    PaymentIntentRequest,
+    PaymentIntentResponse
+} from "../types/onboarding.types";
 import api from "./api";
 
 export const getOnboardingByRecordId = async (recordId?: string): Promise<OnboardingRecordResponse> => {
@@ -86,6 +94,38 @@ export const completeStep = async (completeStepRequest: CompleteStepRequest): Pr
         }
 
         let message = "Something went wrong while completing step";
+        if (error instanceof Error) {
+            message = error.message;
+        } else if (typeof error === "string") {
+            message = error;
+        } else if (typeof error === "object" && error !== null && "message" in error) {
+            message = (error as { message: string }).message;
+        }
+        throw new Error(message);
+    }
+};
+
+export const createPaymentIntent = async (paymentIntentRequest: PaymentIntentRequest): Promise<PaymentIntentResponse> => {
+    try {
+        const url = `/onboarding/create-payment-intent`
+        const response = await api.post<PaymentIntentResponse>(url, paymentIntentRequest);
+
+        if (!response.data.success) {
+            const errorMessage = response.data.message || "Failed to create payment intent";
+            throw new Error(errorMessage);
+        }
+
+        return response.data;
+    } catch (error: any) {
+        if (error.response?.data) {
+            const apiError = error.response.data;
+            if (!apiError.success) {
+                const errorMessage = apiError.message || "Failed to create payment intent";
+                throw new Error(errorMessage);
+            }
+        }
+
+        let message = "Something went wrong while creating payment intent";
         if (error instanceof Error) {
             message = error.message;
         } else if (typeof error === "string") {

@@ -43,6 +43,10 @@ export class OnboardingService {
 			paymentLink: zohoRecord.Payment_Link || {},
 			stripeRequired: zohoRecord.Stripe_Required || null,
 			intakeMeetingRequired: zohoRecord.Intake_Meeting_Required || null,
+			stripeCustomerId: zohoRecord.Stripe_Customer_Id || null,
+			pandadocAgreementCompleted: zohoRecord.Pandadoc_Agreement_Completed || null,
+			stripePaymentCompleted: zohoRecord.Stripe_Payment_Completed || null,
+			amount: zohoRecord.Amount || null,
 		};
 
 		try {
@@ -144,6 +148,33 @@ export class OnboardingService {
 	}
 
 	/**
+	 * Creates a payment intent for Stripe Elements
+	 * @param recordId 
+	 * @returns { clientSecret: string, paymentIntentId: string } - The payment intent client secret and ID
+	 * @throws { Error } - If the payment intent creation fails
+	 */
+	async createPaymentIntent(
+		recordId: string,
+	): Promise<{ clientSecret: string, paymentIntentId: string }> {
+		try {
+			const record = await this.onboardingRepository.findRecordById(recordId);
+			if (!record) {
+				throw new Error(`Record with ID ${recordId} not found`);
+			}
+			// const stripeCustomerId = record.stripeCustomerId;
+			const stripeCustomerId = "cus_Rw3yif7QzbeWFe";
+			const amount = record.amount * 100;
+
+			const paymentIntent = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);
+			this.logger.log(`Payment intent created successfully for record: ${recordId}`);
+			return paymentIntent;
+		} catch (error) {
+			this.logger.error(`Failed to create payment intent for record ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	/**
 	 * Get all onboarding steps with their completion status for a specific record
 	 * @param recordId - The Zoho record ID
 	 * @return {Promise<any[]>} - The onboarding steps with completion status
@@ -207,12 +238,21 @@ export class OnboardingService {
 		try {
 			const record = await this.getRecordById(recordId);
 
-			const pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+			const dbRecord = await this.onboardingRepository.findRecordById(recordId);
+			if (!dbRecord) {
+				throw new Error(`Record with ID ${recordId} not found in the database`);
+			}
 
-			const sharedLink = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
-			if (sharedLink) {
-				await this.updatePandaDocURL(recordId);
-				await this.completeStep(recordId, 1);
+			let pandadoc_session_id = '';
+
+			if (dbRecord.pandadocAgreementCompleted !== "Yes") {
+				pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+
+				const sharedLink = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
+				if (sharedLink) {
+					await this.updatePandaDocURL(recordId);
+					await this.completeStep(recordId, 1);
+				}
 			}
 
 			const steps = await this.getOnboardingSteps(recordId);

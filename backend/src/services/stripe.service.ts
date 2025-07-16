@@ -90,4 +90,32 @@ export class StripeService {
             throw new Error(`Failed to retrieve invoice: ${error.message}`);
         }
     }
+    
+    /**
+     * Creates a payment intent for Stripe Elements
+     * @param recordId The record ID for the payment intent
+     * @param stripeCustomerId The Stripe customer ID
+     * @param amount The amount to be charged in cents
+     * @returns The payment intent client secret and id
+     */
+    async createPaymentIntent(recordId: string, stripeCustomerId: string, amount: number): Promise<{ clientSecret: string, paymentIntentId: string }> {
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount,
+                currency: 'usd',
+                customer: stripeCustomerId,
+                metadata: {
+                    recordId: recordId,
+                },
+                payment_method_types: ['card'],
+            });
+            
+            return { 
+                clientSecret: paymentIntent.client_secret,
+                paymentIntentId: paymentIntent.id
+            };
+        } catch (error) {
+            throw new Error(`Failed to create payment intent: ${error.message}`);
+        }
+    }
 }

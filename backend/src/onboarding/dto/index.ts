@@ -29,3 +29,9 @@ export class CompleteStepDto {
 	@Transform(({ value }) => parseInt(value, 10))
 	stepId: number;
 }
+
+export class CreatePaymentIntentDto {
+	@IsString()
+	@IsNotEmpty()
+	recordId: string;
+}

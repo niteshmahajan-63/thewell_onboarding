@@ -15,6 +15,12 @@ export class OnboardingService {
 		private readonly pandaDocService: PandaDocService,
 	) { }
 
+	/*
+	 * Get a record by ID from Zoho and upsert it in the database
+	 * @param recordId - The Zoho record ID
+	 * @returns {Promise<Record<string, any>>} - The record data with database ID
+	 * @throws {Error} - If there is an error during the upsert operation
+	 */
 	async getRecordById(
 		recordId: string,
 	): Promise<Record<string, any>> {
@@ -59,9 +65,12 @@ export class OnboardingService {
 
 	/**
 	 * Creates or updates client steps based on the zoho record's required fields
+	 * @param zohoRecord - The Zoho record containing the required fields
+	 * @returns {Promise<void>}
+	 * @throws {Error} - If there is an error during the creation or update of client steps
 	 */
 	private async createOrUpdateClientSteps(zohoRecord: Record<string, any>): Promise<void> {
-		const zohoRecordId = zohoRecord.ID;
+		const recordId = zohoRecord.ID;
 
 		// Define the mapping of requirements to step types to match existing records in DB
 		const requiredStepsMap = [
@@ -84,14 +93,14 @@ export class OnboardingService {
 
 				// Check if the client step already exists using repository
 				const existingClientStep = await this.onboardingRepository.findClientStep(
-					zohoRecordId,
+					recordId,
 					onboardingStep.id
 				);
 
 				// Create the step if it doesn't exist
 				if (!existingClientStep) {
 					await this.onboardingRepository.createClientStep(
-						zohoRecordId,
+						recordId,
 						onboardingStep.id,
 						false
 					);
@@ -100,10 +109,21 @@ export class OnboardingService {
 		}
 	}
 
+	/**
+	 * Fetches all records from the database
+	 * @returns {Promise<Record<string, any>>} - The records data
+	 * @throws {Error} - If there is an error during the fetch operation
+	 */
 	async getRecords(): Promise<Record<string, any>> {
 		return this.zohoService.getRecords();
 	}
 
+	/**
+	 * Creates a checkout session for the customer
+	 * @param recordId 
+	 * @returns { url: string } - The URL for the checkout session
+	 * @throws { Error } - If the checkout session creation fails
+	 */
 	async createCheckoutSession(
 		recordId: string,
 	): Promise<{ url: string }> {
@@ -126,6 +146,8 @@ export class OnboardingService {
 	/**
 	 * Get all onboarding steps with their completion status for a specific record
 	 * @param recordId - The Zoho record ID
+	 * @return {Promise<any[]>} - The onboarding steps with completion status
+	 * @throws {Error} - If there is an error during the fetch operation
 	 */
 	async getOnboardingSteps(recordId?: string): Promise<any[]> {
 		if (recordId) {
@@ -139,11 +161,13 @@ export class OnboardingService {
 
 	/**
 	 * Mark a specific step as completed for a client
-	 * @param zohoRecordId - The Zoho record ID
+	 * @param recordId - The Zoho record ID
 	 * @param stepId - The ID of the onboarding step
+	 * @return {Promise<any>} - The updated client step
+	 * @throws {Error} - If there is an error during the completion operation
 	 */
-	async completeStep(zohoRecordId: string, stepId: number): Promise<any> {
-		this.logger.log(`Marking step ${stepId} as complete for record: ${zohoRecordId}`);
+	async completeStep(recordId: string, stepId: number): Promise<any> {
+		this.logger.log(`Marking step ${stepId} as complete for record: ${recordId}`);
 
 		try {
 			// Check if the step exists
@@ -155,16 +179,18 @@ export class OnboardingService {
 			}
 
 			// Update step completion status
-			const updatedClientStep = await this.onboardingRepository.updateStepCompletionStatus(zohoRecordId, stepId);
+			const updatedClientStep = await this.onboardingRepository.updateStepCompletionStatus(recordId, stepId);
+
+			await this.updatePandaDocURL(recordId);
 
 			if (!updatedClientStep) {
-				throw new Error(`Step with ID ${stepId} not found for client with Zoho record ID ${zohoRecordId}`);
+				throw new Error(`Step with ID ${stepId} not found for client with Zoho record ID ${recordId}`);
 			}
 
-			this.logger.log(`Successfully marked step ${stepId} as complete for record: ${zohoRecordId}`);
+			this.logger.log(`Successfully marked step ${stepId} as complete for record: ${recordId}`);
 			return updatedClientStep;
 		} catch (error) {
-			this.logger.error(`Failed to mark step ${stepId} as complete for record ${zohoRecordId}: ${error.message}`);
+			this.logger.error(`Failed to mark step ${stepId} as complete for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}
@@ -172,6 +198,8 @@ export class OnboardingService {
 	/**
 	 * Get both record data and onboarding steps in a single operation
 	 * @param recordId - The Zoho record ID
+	 * @return {Promise<{ record: Record<string, any>, steps: any[], pandadoc_session_id: string }>} - The record data and onboarding steps
+	 * @throws {Error} - If there is an error during the fetch operation
 	 */
 	async getRecordWithSteps(recordId: string): Promise<{ record: Record<string, any>, steps: any[], pandadoc_session_id: string }> {
 		this.logger.log(`Fetching record data and steps for record: ${recordId}`);
@@ -181,9 +209,9 @@ export class OnboardingService {
 
 			const pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
 
-			const shared_link = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
-			if (shared_link !== false) {
-				// await this.zohoService.updateRecord(recordId, { Sender_PandaDoc_URL: shared_link });
+			const sharedLink = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
+			if (sharedLink) {
+				await this.updatePandaDocURL(recordId);
 				await this.completeStep(recordId, 1);
 			}
 
@@ -192,6 +220,33 @@ export class OnboardingService {
 			return { record, steps, pandadoc_session_id };
 		} catch (error) {
 			this.logger.error(`Failed to fetch record with steps for ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	/**
+	 * Updates the PandaDoc URL in the Zoho record
+	 * @param recordId - The Zoho record ID
+	 * @throws {Error} - If there is an error during the update operation
+	 * @returns {Promise<void>} - Resolves when the update is successful
+	 */
+	async updatePandaDocURL(recordId: string): Promise<void> {
+		try {
+			const zohoRecord = await this.zohoService.getRecordById(recordId);
+			const pandaDocId = zohoRecord.PandaDoc_ID;
+			if (!pandaDocId) {
+				this.logger.warn(`No PandaDoc ID found for record ${recordId}`);
+				return;
+			}
+			const sharedLink = await this.pandaDocService.isDocumentSigned(pandaDocId);
+			if (!sharedLink) {
+				this.logger.warn(`No signing link found for PandaDoc ID ${pandaDocId}`);
+				return;
+			}
+			await this.zohoService.updateRecord(recordId, { Sender_PandaDoc_URL: { value: sharedLink, url: sharedLink } });
+			this.logger.log(`PandaDoc URL updated successfully for record ${recordId}`);
+		} catch (error) {
+			this.logger.error(`Failed to update PandaDoc URL for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

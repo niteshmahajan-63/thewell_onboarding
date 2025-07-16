@@ -96,7 +96,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     }, [currentStep, completedSteps, setCurrentStep, getNextStep, steps]);
 
     const currentStepObject = getCurrentStepObject()
-    const isLastStep = !getNextStep()
+    // const isLastStep = !getNextStep()
 
     if (!currentStepObject) {
         return (
@@ -140,27 +140,6 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                     {/* Meeting Step */}
                     {currentStepObject.type === 'meeting' && !stepCompleting && (
                         <CalendlyBooking onBookingComplete={handleCalendlyComplete} recordId={recordId} />
-                    )}
-
-                    {/* Step Completing State */}
-                    {stepCompleting && (
-                        <div className="text-center py-16">
-                            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-12 max-w-md mx-auto">
-                                <div className="flex items-center justify-center mb-4">
-                                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-                                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <p className="text-lg font-semibold text-green-800">
-                                    {isLastStep ? 'Onboarding Complete!' : `${currentStepObject.name} Completed!`}
-                                </p>
-                                <p className="text-sm text-green-600 mt-2">
-                                    {isLastStep ? 'All steps have been completed successfully.' : 'Moving to next step...'}
-                                </p>
-                            </div>
-                        </div>
                     )}
                 </CardContent>
             </Card>

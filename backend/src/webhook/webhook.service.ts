@@ -147,7 +147,6 @@ export class WebhookService {
             );
 
             this.logger.log(`Stripe signature verification succeeded for event: ${event.type}`);
-            // Return the full event object so it can be used in the controller
             return event;
         } catch (error) {
             this.logger.error(`Error validating Stripe signature: ${error.message}`);
@@ -162,60 +161,42 @@ export class WebhookService {
         const eventType = event.type;
 
         switch (eventType) {
-            case 'checkout.session.completed':
+            case 'payment_intent.succeeded':
                 try {
-                    this.logger.log('Stripe checkout session completed');
-                    const session = event.data.object as Stripe.Checkout.Session;
+                    this.logger.log('Stripe payment intent succeeded');
+                    
+                    const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
-                    let invoiceId = null;
-                    let hostedInvoiceUrl = null;
-
-                    if (session.invoice) {
-                        invoiceId = typeof session.invoice === 'string' ?
-                            session.invoice : session.invoice.id;
-
-                        try {
-                            const invoice = await this.stripeService.getInvoice(invoiceId);
-                            if (invoice && invoice.hosted_invoice_url) {
-                                hostedInvoiceUrl = invoice.hosted_invoice_url;
-                            }
-                        }
-                        catch (error) {
-                            this.logger.error(`Error fetching Stripe invoice: ${error.message}`);
-                            return {
-                                message: `Failed to fetch Stripe invoice: ${error.message}`,
-                                success: false
-                            };
-                        }
-                    }
+                    // PaymentIntent does not have 'invoice' property
+                    // If you need to link to an invoice, you must handle 'invoice.payment_succeeded' event instead
 
                     await this.webhookRepository.storeStripePayment({
-                        zohoRecordId: session.metadata?.recordId,
-                        customerId: session.customer,
-                        paymentDate: new Date(session.created * 1000),
-                        paymentStatus: session.payment_status,
-                        paymentId: session.payment_intent,
+                        zohoRecordId: paymentIntent.metadata?.recordId,
+                        customerId: paymentIntent.customer,
+                        paymentDate: new Date(paymentIntent.created * 1000),
+                        paymentStatus: paymentIntent.status,
+                        paymentId: paymentIntent.id,
                         payment: 'Setup Fee',
-                        amount: session.amount_total ? session.amount_total / 100 : 0,
+                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
                         paymentSource: 'Credit Card/Debit Card',
-                        invoiceId: invoiceId,
-                        hostedInvoiceUrl: hostedInvoiceUrl,
-                        createdAt: new Date(session.created * 1000),
+                        invoiceId: null,
+                        hostedInvoiceUrl: null,
+                        createdAt: new Date(paymentIntent.created * 1000),
                         updatedAt: new Date()
                     });
 
                     return {
-                        message: 'Stripe checkout session completed event processed successfully',
+                        message: 'Stripe payment_intent.succeeded event processed successfully',
                         success: true
                     };
                 } catch (error) {
-                    this.logger.error(`Error processing Stripe checkout session: ${error.message}`);
+                    this.logger.error(`Error processing Stripe payment intent: ${error.message}`);
                     if (event?.data?.object) {
-                        this.logger.debug(`Session ID: ${(event.data.object as any).id || 'unknown'}`);
+                        this.logger.debug(`PaymentIntent ID: ${(event.data.object as any).id || 'unknown'}`);
                     }
 
                     return {
-                        message: `Failed to process Stripe checkout session: ${error.message}`,
+                        message: `Failed to process Stripe payment intent: ${error.message}`,
                         success: false
                     };
                 }

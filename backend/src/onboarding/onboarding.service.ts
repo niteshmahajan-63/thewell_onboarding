@@ -238,18 +238,16 @@ export class OnboardingService {
 		try {
 			const record = await this.getRecordById(recordId);
 
+			const pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+
 			const dbRecord = await this.onboardingRepository.findRecordById(recordId);
 			if (!dbRecord) {
 				throw new Error(`Record with ID ${recordId} not found in the database`);
 			}
 
-			let pandadoc_session_id = '';
-
 			if (dbRecord.pandadocAgreementCompleted !== "Yes") {
-				pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
-
-				const sharedLink = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
-				if (sharedLink) {
+				const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
+				if (response) {
 					await this.updatePandaDocURL(recordId);
 					await this.completeStep(recordId, 1);
 				}
@@ -278,12 +276,25 @@ export class OnboardingService {
 				this.logger.warn(`No PandaDoc ID found for record ${recordId}`);
 				return;
 			}
-			const sharedLink = await this.pandaDocService.isDocumentSigned(pandaDocId);
-			if (!sharedLink) {
+
+			const response = await this.pandaDocService.isDocumentSigned(pandaDocId);
+			if (!response || response === true || !('sharedLink' in response)) {
 				this.logger.warn(`No signing link found for PandaDoc ID ${pandaDocId}`);
 				return;
 			}
-			await this.zohoService.updateRecord(recordId, { Sender_PandaDoc_URL: { value: sharedLink, url: sharedLink } });
+
+			const payload = {
+				Sender_PandaDoc_URL:
+				{
+					value: response.sharedLink,
+					url: response.sharedLink
+				},
+				Pandadoc_Agreement_Completed: 'Yes',
+				Signer_Name: response.signerName,
+				Title: response.signerTitle
+			};
+			await this.zohoService.updateRecord(recordId, payload);
+
 			this.logger.log(`PandaDoc URL updated successfully for record ${recordId}`);
 		} catch (error) {
 			this.logger.error(`Failed to update PandaDoc URL for record ${recordId}: ${error.message}`);

@@ -6,6 +6,8 @@ export const useOnboarding = (recordId: string) => {
     const [currentStep, setCurrentStep] = useState(1)
     const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
     const [pandaDocSessionId, setPandaDocSessionId] = useState<string | null>(null)
+    const [companyName, setCompanyName] = useState<string | null>(null)
+    const [amount, setAmount] = useState<number | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
@@ -26,6 +28,8 @@ export const useOnboarding = (recordId: string) => {
             setOnboardingConfig(record)
             setSteps(steps)
             setPandaDocSessionId(pandadoc_session_id)
+            setCompanyName(record.Company_Name || null)
+            setAmount(record.Amount || null)
             
             const completedStepIds = new Set<string>()
             steps.forEach(step => {
@@ -57,6 +61,8 @@ export const useOnboarding = (recordId: string) => {
         completedSteps,
         setCompletedSteps,
         pandaDocSessionId,
+        companyName,
+        amount,
         isLoading,
         error,
         onboardingConfig,

@@ -42,7 +42,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
         return currentIndex < steps.length - 1 ? steps[currentIndex + 1] : null
     }
 
-    const handleStepComplete = (_stepData = {}) => {
+    const handleComplete = () => {
         setStepCompleting(true)
 
         setTimeout(() => {
@@ -54,7 +54,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
         }, 1500)
     }
 
-    const handlePandaDocComplete = async (isComplete: boolean, data?: any) => {
+    const handleStepComplete = async (isComplete: boolean) => {
         if (isComplete) {
             try {
                 await completeStep({
@@ -70,16 +70,16 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                     return newCompletedSteps;
                 });
 
-                handleStepComplete(data);
+                handleComplete();
             } catch (error) {
                 console.error('Error completing step:', error);
-                handleStepComplete(data);
+                handleComplete();
             }
         }
     }
 
     const handleCalendlyComplete = () => {
-        handleStepComplete()
+        handleComplete()
     }
 
     useEffect(() => {
@@ -119,7 +119,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                     {/* Agreement Step */}
                     {currentStepObject.type === 'agreement' && !stepCompleting && pandaDocSessionId && (
                         <PandaDocSigning
-                            onSigningComplete={handlePandaDocComplete}
+                            handleStepComplete={handleStepComplete}
                         />
                     )}
 
@@ -134,7 +134,9 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
 
                     {/* Payment Step */}
                     {currentStepObject.type === 'payment' && !stepCompleting && (
-                        <StripeCheckout />
+                        <StripeCheckout
+                            handleStepComplete={handleStepComplete}
+                        />
                     )}
 
                     {/* Meeting Step */}

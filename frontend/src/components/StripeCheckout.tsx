@@ -13,7 +13,10 @@ import { loadStripe } from '@stripe/stripe-js'
 import type { Appearance as StripeAppearance, StripeElementsOptions } from '@stripe/stripe-js'
 import { env } from '../config/env'
 
-// Extend the Stripe Appearance type to include the layout property
+interface StripeCheckoutProps {
+    handleStepComplete: (completed: boolean) => void;
+}
+
 interface Appearance extends StripeAppearance {
     layout?: {
         type: 'tabs' | 'accordion' | 'spacedAccordionItems';
@@ -23,11 +26,7 @@ interface Appearance extends StripeAppearance {
 
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
-interface CheckoutFormProps {
-    // No longer need clientSecret prop with PaymentElement
-}
-
-const CheckoutForm: React.FC<CheckoutFormProps> = () => {
+const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const stripe = useStripe();
@@ -43,23 +42,21 @@ const CheckoutForm: React.FC<CheckoutFormProps> = () => {
         setIsLoading(true);
         setMessage(null);
 
-        // Use the PaymentElement with confirmPayment
         const { error, paymentIntent } = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                // Return to the same page after payment
                 return_url: window.location.href,
             },
             redirect: 'if_required',
         });
 
         if (error) {
-            // Show error to your customer
             setMessage(error.message || 'An unexpected error occurred.');
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
             setMessage('Payment successful!');
-            // You can redirect or update UI here
-            // Optionally mark the step as completed
+            if (handleStepComplete) {
+                handleStepComplete(true)
+            }
         } else {
             setMessage('Payment processing. Please wait a moment.');
         }
@@ -131,10 +128,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = () => {
     );
 };
 
-const StripeCheckout: React.FC = () => {
+const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { recordId } = useOnboardingContext();
+    const { recordId, companyName, amount } = useOnboardingContext();
 
     useEffect(() => {
         if (recordId) {
@@ -208,37 +205,112 @@ const StripeCheckout: React.FC = () => {
     };
 
     return (
-        <div className="w-full max-w-3xl mx-auto px-4">
-            <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">Complete Your Payment</h3>
-                <p className="text-gray-600 mx-auto max-w-md">
-                    To proceed with your onboarding, please enter your card details below.
-                </p>
-            </div>
+        <div className="w-full h-screen flex bg-gray-50 overflow-hidden">
+            {/* Left Panel */}
+            <div className="w-1/2 flex flex-col justify-center py-3 px-5 relative bg-well-dark">
+                <div className="flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                        {/* Logo and Company Name */}
+                        <div className="flex items-center mb-4">
+                            <div className="flex items-center justify-center w-7 h-7 bg-white/20 rounded-lg mr-2">
+                                <img src="/thewell-logo.png" alt="The Well Logo" className="h-4 w-4 rounded" />
+                            </div>
+                            <span className="text-white text-base font-semibold tracking-tight">
+                                THE WELL
+                            </span>
+                        </div>
 
-            {error && (
-                <div className="p-4 mb-6 rounded-md bg-red-50 border border-red-200 text-red-700">
-                    <div className="flex items-center">
-                        <svg className="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        <span className="font-medium">{error}</span>
+                        {/* Plan Information */}
+                        <div className="mb-6 text-center">
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/10 mb-2">
+                                <span className="text-white/90 text-xs font-medium">{companyName || 'Company'}</span>
+                            </div>
+                            <div className="flex items-baseline justify-center">
+                                <span className="text-xl font-bold text-white leading-none">
+                                    ${amount ? Number(amount).toFixed(2) : '0.00'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Center Section - Large Visual Card */}
+                        <div className="flex items-center justify-center mb-6">
+                            <div className="relative">
+                                <div className="w-64 h-64 bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl flex items-center justify-center border border-white/20">
+                                    <div className="w-48 h-48 bg-white/90 rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden">
+                                        {/* Modern geometric design */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-well-primary/20 to-transparent"></div>
+                                        <div className="relative z-10">
+                                            {/* Credit card icon */}
+                                            <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <rect x="8" y="20" width="48" height="28" rx="4" fill="#059669" />
+                                                <rect x="8" y="26" width="48" height="4" fill="#047857" />
+                                                <rect x="12" y="36" width="12" height="3" rx="1.5" fill="#ffffff" />
+                                                <rect x="28" y="36" width="8" height="3" rx="1.5" fill="#ffffff" />
+                                                <rect x="40" y="36" width="16" height="3" rx="1.5" fill="#ffffff" />
+                                                <circle cx="52" cy="24" r="2" fill="#ffffff" />
+                                            </svg>
+                                        </div>
+                                        {/* Decorative elements */}
+                                        <div className="absolute top-4 right-4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg opacity-80"></div>
+                                        <div className="absolute bottom-4 left-4 w-5 h-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full opacity-60"></div>
+                                    </div>
+                                </div>
+                                {/* Subtle glow effect */}
+                                <div className="absolute inset-0 bg-well-primary/20 rounded-2xl blur-xl scale-110 -z-10"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
+            </div>
 
-            {!clientSecret ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-                    <p className="mt-4 text-sm text-gray-500">Initializing payment form...</p>
+            {/* Right Panel */}
+            <div className="w-1/2 flex flex-col justify-center px-8 py-4 bg-white h-screen overflow-y-auto">
+                <div className="max-w-lg mx-auto w-full">
+                    {/* Header */}
+                    <div className="mb-4">
+                        <h1 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+                            Complete Your Payment
+                        </h1>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                            Secure payment processing to complete your onboarding and activate your professional plan.
+                        </p>
+                    </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="p-3 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700">
+                            <div className="flex items-start">
+                                <svg className="h-4 w-4 text-red-400 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                <div>
+                                    <span className="font-medium text-sm">Payment Error</span>
+                                    <p className="mt-1 text-sm">{error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Payment Form */}
+                    {!clientSecret ? (
+                        <div className="flex flex-col items-center justify-center py-6">
+                            <div className="relative">
+                                <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-well-primary"></div>
+                                <div className="absolute inset-0 rounded-full border-2 border-gray-100"></div>
+                            </div>
+                            <p className="mt-3 text-gray-500 text-sm">Initializing secure payment...</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200">
+                            <Elements stripe={stripePromise} options={options}>
+                                <CheckoutForm
+                                    handleStepComplete={handleStepComplete}
+                                />
+                            </Elements>
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div className="bg-white shadow-lg rounded-lg p-8 border border-gray-200 transition-all hover:shadow-xl max-w-2xl mx-auto">
-                    <Elements stripe={stripePromise} options={options}>
-                        <CheckoutForm />
-                    </Elements>
-                </div>
-            )}
+            </div>
         </div>
     );
 };

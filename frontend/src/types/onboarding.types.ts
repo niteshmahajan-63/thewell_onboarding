@@ -35,6 +35,7 @@ export interface OnboardingRecord {
     ID: string;
     Agreement_ID: string;
     dbId: number
+    Amount: number;
 }
 
 export interface CheckoutSessionRequest {

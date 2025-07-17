@@ -62,9 +62,7 @@ export class WebhookController {
             this.logger.warn('Missing Stripe webhook signature');
             throw new HttpException('Invalid webhook signature', HttpStatus.UNAUTHORIZED);
         }
-        
-        // With route-specific express.raw, the raw body is available directly in request.body
-        // for the /api/webhook/stripe endpoint
+                
         const rawBody = request.body;
 
         if (!rawBody) {

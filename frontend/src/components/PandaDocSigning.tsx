@@ -5,10 +5,10 @@ import { Button } from './ui/button'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
 
 interface PandaDocSigningProps {
-	onSigningComplete: (completed: boolean, data?: any) => void;
+	handleStepComplete: (completed: boolean) => void;
 }
 
-const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete }) => {
+const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete }) => {
 	const { pandaDocSessionId } = useOnboardingContext()
 	const [error, setError] = useState<string | null>(null)
 	const [showEmbedded, setShowEmbedded] = useState<boolean>(false)
@@ -23,13 +23,12 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete }) 
 
 				const { type, data } = event.data || {}
 
-				// Handle document completion event
 				if (type === 'document_completed' ||
 					type === 'document_signed' ||
 					type === 'session_view.document.completed') {
 					setIsLoading(false)
-					if (onSigningComplete) {
-						onSigningComplete(true, data)
+					if (handleStepComplete) {
+						handleStepComplete(true)
 					}
 				} else if (type === 'session_view.document.exception' || type === 'error') {
 					setIsLoading(false)
@@ -46,7 +45,7 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ onSigningComplete }) 
 		return () => {
 			window.removeEventListener('message', handleMessage)
 		}
-	}, [onSigningComplete])
+	}, [handleStepComplete])
 
 	// If there's an error, display it
 	if (error) {

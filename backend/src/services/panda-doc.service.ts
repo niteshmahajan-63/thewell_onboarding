@@ -22,7 +22,6 @@ export class PandaDocService {
 
             if (response.data.status === 'document.draft') {
                 await this.sendDocument(documentId);
-                console.log(`Document ${documentId} is still in draft state.`);
             }
 
             const clientRecipient = response.data.recipients?.find(recipient => recipient.role === 'Client');
@@ -85,7 +84,7 @@ export class PandaDocService {
         }
     }
 
-    async isDocumentSigned(documentId: string): Promise<boolean> {
+    async isDocumentSigned(documentId: string): Promise<boolean | { sharedLink: string, signerName: string | null, signerTitle: string | null }> {
         try {
             const documentDetails = await this.checkDocumentStatus(documentId);
 
@@ -102,7 +101,14 @@ export class PandaDocService {
                         const senderRecipient = documentDetails.recipients.find(
                             recipient => recipient.role === 'Sender'
                         );
-                        return senderRecipient.shared_link;
+                        const signerNameField = documentDetails.fields?.find(f => f.field_id === 'Signer_Name');
+                        const signerTitleField = documentDetails.fields?.find(f => f.field_id === 'Signer_Title');
+
+                        return {
+                            sharedLink: senderRecipient.shared_link ?? null,
+                            signerName: signerNameField?.value ?? null,
+                            signerTitle: signerTitleField?.value ?? null
+                        };
                     }
                 }
             }

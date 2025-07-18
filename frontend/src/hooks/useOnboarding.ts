@@ -8,6 +8,7 @@ export const useOnboarding = (recordId: string) => {
     const [pandaDocSessionId, setPandaDocSessionId] = useState<string | null>(null)
     const [companyName, setCompanyName] = useState<string | null>(null)
     const [amount, setAmount] = useState<number | null>(null)
+    const [calendlyBookingURL, setCalendlyBookingURL] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
@@ -30,6 +31,7 @@ export const useOnboarding = (recordId: string) => {
             setPandaDocSessionId(pandadoc_session_id)
             setCompanyName(record.Company_Name || null)
             setAmount(record.Amount || null)
+            setCalendlyBookingURL(record.Calendly_Booking_URL.value)
             
             const completedStepIds = new Set<string>()
             steps.forEach(step => {
@@ -63,6 +65,7 @@ export const useOnboarding = (recordId: string) => {
         pandaDocSessionId,
         companyName,
         amount,
+        calendlyBookingURL,
         isLoading,
         error,
         onboardingConfig,

@@ -6,7 +6,7 @@ import StepIndicator from './StepIndicator'
 import OnboardingForm from './OnboardingForm'
 
 const OnboardingContent: React.FC = () => {
-    const {
+	const {
 		currentStep,
 		setCurrentStep,
 		completedSteps,
@@ -19,7 +19,7 @@ const OnboardingContent: React.FC = () => {
 		recordId
 	} = useOnboardingContext()
 
-    if (isLoading) {
+	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center py-16">
 				<div className="flex items-center space-x-3">
@@ -30,7 +30,7 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-    if (error) {
+	if (error) {
 		return (
 			<div className="bg-red-900 border border-red-700 rounded-lg p-4 text-center">
 				<p className="text-red-300 mb-2">Failed to load onboarding data</p>
@@ -39,7 +39,7 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-    if (!onboardingConfig) {
+	if (!onboardingConfig) {
 		return (
 			<div className="bg-yellow-900 border border-yellow-700 rounded-lg p-4 text-center">
 				<p className="text-yellow-300">No onboarding configuration found</p>
@@ -47,7 +47,7 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-    if (steps.length === 0) {
+	if (steps.length === 0) {
 		return (
 			<div className="bg-green-900 border border-green-700 rounded-lg p-8 text-center">
 				<h2 className="text-green-300 text-xl font-semibold mb-2">All Set!</h2>
@@ -56,20 +56,23 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-    return (
+	const allStepsCompleted = steps.length > 0 && completedSteps.size === steps.length;
+	return (
 		<div className="space-y-8">
 			<OnboardingHeader />
-			<DemoStepSelector 
-				steps={steps} 
-				currentStep={currentStep}
-				setCurrentStep={setCurrentStep}
-			/>
-            <StepIndicator 
+			{!allStepsCompleted && (
+				<DemoStepSelector 
+					steps={steps} 
+					currentStep={currentStep}
+					setCurrentStep={setCurrentStep}
+				/>
+			)}
+			<StepIndicator 
 				steps={steps} 
 				currentStep={currentStep} 
 				completedSteps={completedSteps} 
 			/>
-            <OnboardingForm
+			<OnboardingForm
 				currentStep={currentStep}
 				steps={steps}
 				setCurrentStep={setCurrentStep}

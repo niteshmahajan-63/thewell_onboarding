@@ -108,8 +108,8 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                     <CardContent className="p-6 min-h-[400px] flex items-center justify-center bg-white w-full">
                         <div className="text-center">
                             <div className="bg-green-100 border-2 border-green-400 rounded-xl p-12 max-w-md mx-auto">
-                                <p className="text-2xl text-green-700 font-bold mb-4">🎉 All your steps have been completed!</p>
-                                <p className="text-lg text-green-800">Thank you for completing the onboarding process.</p>
+                                <p className="text-2xl text-green-700 font-bold mb-4">🎉 Onboarding Complete!</p>
+                                <p className="text-lg text-green-800">Thank you for completing your onboarding. You're all set, and we're excited to start working with you!</p>
                             </div>
                         </div>
                     </CardContent>

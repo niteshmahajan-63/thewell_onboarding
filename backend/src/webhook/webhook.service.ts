@@ -167,7 +167,6 @@ export class WebhookService {
                     this.logger.log('Stripe payment intent succeeded');
                     
                     const paymentIntent = event.data.object as Stripe.PaymentIntent;
-                    console.log(paymentIntent);
 
                     // PaymentIntent does not have 'invoice' property
                     // If you need to link to an invoice, you must handle 'invoice.payment_succeeded' event instead

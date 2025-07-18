@@ -36,6 +36,10 @@ export interface OnboardingRecord {
     Agreement_ID: string;
     dbId: number
     Amount: number;
+    Calendly_Booking_URL: {
+        url: string;
+        value: string;
+    };
 }
 
 export interface CheckoutSessionRequest {

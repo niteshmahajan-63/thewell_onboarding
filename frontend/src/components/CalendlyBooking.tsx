@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { InlineWidget } from 'react-calendly';
+import { useOnboardingContext } from '../contexts/OnboardingContext';
 
 // Define props interface for the component
 interface CalendlyBookingProps {
@@ -9,6 +10,7 @@ interface CalendlyBookingProps {
 
 const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ handleStepComplete, recordId }) => {
     const [isBookingComplete, setIsBookingComplete] = useState(false)
+    const { calendlyBookingURL } = useOnboardingContext();
 
     useEffect(() => {
         const handler = (e: MessageEvent) => {
@@ -53,7 +55,7 @@ const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ handleStepComplete, r
             <div className="bg-white border-2 border-well-primary rounded-xl p-4 mx-auto">
                 <div className="calendly-embed" style={{ width: "100%" }}>
                     <InlineWidget
-                        url="https://calendly.com/brandon-thewell/introductory-discussion-20min"
+                        url={calendlyBookingURL || ''}
                         styles={{ height: '700px' }}
                         utm={{ utmContent: recordId }}
                     />

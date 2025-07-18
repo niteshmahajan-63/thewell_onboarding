@@ -47,6 +47,7 @@ export class OnboardingService {
 			pandadocAgreementCompleted: zohoRecord.Pandadoc_Agreement_Completed || null,
 			stripePaymentCompleted: zohoRecord.Stripe_Payment_Completed || null,
 			amount: zohoRecord.Amount || null,
+			calendlyBookingURL: zohoRecord.Calendly_Booking_URL.value || null,
 		};
 
 		try {
@@ -329,19 +330,25 @@ export class OnboardingService {
 				this.logger.warn(`No payment info found for Stripe Customer ID ${stripeCustomerId}`);
 				return;
 			}
-			const formatDate = (date: Date | string) => {
-				const d = new Date(date);
-				const day = String(d.getDate()).padStart(2, '0');
-				const month = d.toLocaleString('en-US', { month: 'short' });
-				const year = d.getFullYear();
-				return `${day}-${month}-${year}`;
-			};
+
+			let formattedPaymentDate = response.paymentDate;
+			if (response.paymentDate) {
+				let dateStr = response.paymentDate;
+				if (response.paymentDate instanceof Date) {
+					dateStr = response.paymentDate.toISOString();
+				}
+				if (typeof dateStr === 'string') {
+					formattedPaymentDate = dateStr.replace(/\.[0-9]{3}Z$/, '');
+				}
+			}
+
 			const payload = {
 				Stripe_Payment_ID: response.paymentId,
 				Payment_Source: response.paymentSource,
-				Payment_Date: response.paymentDate ? formatDate(response.paymentDate) : '',
+				Payment_Date: formattedPaymentDate,
 				Payment: '',
-				Payment_Status: response.paymentStatus
+				Payment_Status: response.paymentStatus,
+				Stripe_Payment_Completed: 'Yes',
 			};
 			await this.zohoService.updateRecord(recordId, payload);
 		} catch (error) {

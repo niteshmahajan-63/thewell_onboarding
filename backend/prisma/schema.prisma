@@ -30,6 +30,7 @@ model Client {
   pandadocAgreementCompleted String?  @map("pandadoc_agreement_completed")
   stripePaymentCompleted     String?  @map("stripe_payment_completed")
   amount                     String?  @map("amount")
+  calendlyBookingURL         String?  @map("calendly_booking_url")
 
   @@map("clients")
 }

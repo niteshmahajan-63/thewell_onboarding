@@ -207,26 +207,29 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
     return (
         <div className="w-full h-screen flex bg-gray-50 overflow-hidden">
             {/* Left Panel */}
-            <div className="w-1/2 flex flex-col justify-center py-3 px-5 relative bg-well-dark">
-                <div className="flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                        {/* Logo and Company Name */}
-                        <div className="flex items-center mb-4">
-                            <div className="flex items-center justify-center w-7 h-7 bg-white/20 rounded-lg mr-2">
-                                <img src="/thewell-logo.png" alt="The Well Logo" className="h-4 w-4 rounded" />
+            <div className="w-1/2 flex flex-col py-3 px-5 relative bg-white">
+                {/* Rest of the content centered */}
+                <div className="flex flex-1">
+                    <div className="flex flex-col items-center justify-center w-full">
+                        {/* Logo - Aligned with image left edge */}
+                        <div className="mb-20 w-[30rem] text-left">
+                            <div className="flex items-center">
+                                <div className="flex items-center justify-center w-30 h-30 bg-black rounded-lg mr-2 p-4">
+                                    <img src="/thewell-logo.png" alt="The Well Logo" className="h-16 w-16 rounded" />
+                                </div>
+                                <span className="text-black text-2xl font-semibold tracking-tight">
+                                    THE WELL
+                                </span>
                             </div>
-                            <span className="text-white text-base font-semibold tracking-tight">
-                                THE WELL
-                            </span>
                         </div>
 
-                        {/* Plan Information */}
-                        <div className="mb-6 text-center">
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-white/10 mb-2">
-                                <span className="text-white/90 text-xs font-medium">{companyName || 'Company'}</span>
+                        {/* Plan Information - Aligned with image left edge */}
+                        <div className="mb-8 w-[30rem] text-left">
+                            <div className="inline-flex items-center py-1 rounded-full bg-white/10 mb-3">
+                                <span className="text-black text-sm font-medium">{companyName || 'Company'}</span>
                             </div>
-                            <div className="flex items-baseline justify-center">
-                                <span className="text-xl font-bold text-white leading-none">
+                            <div className="flex items-baseline justify-start">
+                                <span className="text-2xl font-bold text-black leading-none">
                                     ${amount ? Number(amount).toFixed(2) : '0.00'}
                                 </span>
                             </div>
@@ -234,33 +237,16 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
 
                         {/* Center Section - Large Visual Card */}
                         <div className="flex items-center justify-center mb-6">
-                            <div className="relative">
-                                <div className="w-64 h-64 bg-white/10 backdrop-blur-sm rounded-2xl shadow-2xl flex items-center justify-center border border-white/20">
-                                    <div className="w-48 h-48 bg-white/90 rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden">
-                                        {/* Modern geometric design */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-well-primary/20 to-transparent"></div>
-                                        <div className="relative z-10">
-                                            {/* Credit card icon */}
-                                            <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <rect x="8" y="20" width="48" height="28" rx="4" fill="#059669" />
-                                                <rect x="8" y="26" width="48" height="4" fill="#047857" />
-                                                <rect x="12" y="36" width="12" height="3" rx="1.5" fill="#ffffff" />
-                                                <rect x="28" y="36" width="8" height="3" rx="1.5" fill="#ffffff" />
-                                                <rect x="40" y="36" width="16" height="3" rx="1.5" fill="#ffffff" />
-                                                <circle cx="52" cy="24" r="2" fill="#ffffff" />
-                                            </svg>
-                                        </div>
-                                        {/* Decorative elements */}
-                                        <div className="absolute top-4 right-4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg opacity-80"></div>
-                                        <div className="absolute bottom-4 left-4 w-5 h-5 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full opacity-60"></div>
-                                    </div>
-                                </div>
-                                {/* Subtle glow effect */}
-                                <div className="absolute inset-0 bg-well-primary/20 rounded-2xl blur-xl scale-110 -z-10"></div>
-                            </div>
+                            <img
+                                src="/78792.jpg"
+                                alt="Visual Card"
+                                className="w-[30rem] h-90 object-cover rounded-2xl shadow-2xl border border-white/20 bg-white/10 backdrop-blur-sm"
+                            />
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
             {/* Right Panel */}

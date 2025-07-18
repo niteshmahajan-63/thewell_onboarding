@@ -35,13 +35,13 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
             {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                     <div className="flex flex-col items-center">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${completedSteps.has(step.id) || isCurrentGreaterThan(step.id)
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id)
+                            ? 'bg-well-primary text-white border-well-primary'
+                            : compareStepId(step.id, currentStep)
                                 ? 'bg-well-primary text-white border-well-primary'
-                                : compareStepId(step.id, currentStep)
-                                    ? 'bg-well-primary text-white border-well-primary'
-                                    : 'bg-white text-gray-400 border-gray-400'
+                                : 'bg-white text-gray-400 border-gray-400'
                             }`}>
-                            {completedSteps.has(step.id) || isCurrentGreaterThan(step.id) ? (
+                            {completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id) ? (
                                 <Check className="w-5 h-5" />
                             ) : (
                                 <span className="font-bold">{index + 1}</span>
@@ -49,9 +49,9 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
                         </div>
 
                         <div className="mt-3 text-center">
-                            <div className={`text-sm font-medium transition-colors duration-300 ${completedSteps.has(step.id) || isCurrentGreaterOrEqual(step.id)
-                                    ? 'text-well-primary'
-                                    : 'text-gray-500'
+                            <div className={`text-sm font-medium transition-colors duration-300 ${completedSteps.has(String(step.id)) || isCurrentGreaterOrEqual(step.id)
+                                ? 'text-well-primary'
+                                : 'text-gray-500'
                                 }`}>
                                 {step.name}
                             </div>
@@ -59,9 +59,9 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
                     </div>
 
                     {index < steps.length - 1 && (
-                        <div className={`w-24 h-0.5 ml-8 ${completedSteps.has(step.id) || isCurrentGreaterThan(step.id)
-                                ? 'bg-well-primary'
-                                : 'bg-gray-600'
+                        <div className={`w-24 h-0.5 ml-8 ${completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id)
+                            ? 'bg-well-primary'
+                            : 'bg-gray-600'
                             }`}></div>
                     )}
                 </div>

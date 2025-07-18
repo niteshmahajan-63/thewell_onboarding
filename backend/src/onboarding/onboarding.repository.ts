@@ -114,6 +114,13 @@ export class OnboardingRepository {
             })
         }
 
+        if (stepId === 2 && isCompleted) {
+            await this.prisma.client.update({
+                where: { zohoRecordId },
+                data: { stripePaymentCompleted: "Yes" },
+            })
+        }
+
         return this.prisma.clientSteps.update({
             where: {
                 id: clientStep.id,
@@ -129,6 +136,12 @@ export class OnboardingRepository {
      */
     async findRecordById(recordId: string): Promise<any> {
         return this.prisma.client.findUnique({
+            where: { zohoRecordId: recordId },
+        });
+    }
+
+    async getStripePaymentRecord(recordId: string): Promise<any> {
+        return this.prisma.stripePayments.findFirst({
             where: { zohoRecordId: recordId },
         });
     }

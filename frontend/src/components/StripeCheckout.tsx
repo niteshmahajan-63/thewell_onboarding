@@ -272,7 +272,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                             Complete Your Payment
                         </h1>
                         <p className="text-gray-600 text-sm leading-relaxed">
-                            Secure payment processing to complete your onboarding and activate your professional plan.
+                            Secure payment processing to complete your onboarding.
                         </p>
                     </div>
 

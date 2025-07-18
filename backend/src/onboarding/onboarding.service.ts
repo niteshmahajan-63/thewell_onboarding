@@ -212,7 +212,13 @@ export class OnboardingService {
 			// Update step completion status
 			const updatedClientStep = await this.onboardingRepository.updateStepCompletionStatus(recordId, stepId);
 
-			await this.updatePandaDocURL(recordId);
+			if (stepId === 1) {
+				await this.updatePandaDocURL(recordId);
+			}
+
+			if (stepId === 2) {
+				await this.updateStripePayment(recordId);
+			}
 
 			if (!updatedClientStep) {
 				throw new Error(`Step with ID ${stepId} not found for client with Zoho record ID ${recordId}`);
@@ -250,6 +256,14 @@ export class OnboardingService {
 				if (response) {
 					await this.updatePandaDocURL(recordId);
 					await this.completeStep(recordId, 1);
+				}
+			}
+
+			if (dbRecord.stripePaymentCompleted !== "Yes") {
+				const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
+				if (response) {
+					await this.updateStripePayment(recordId);
+					await this.completeStep(recordId, 2);
 				}
 			}
 
@@ -298,6 +312,40 @@ export class OnboardingService {
 			this.logger.log(`PandaDoc URL updated successfully for record ${recordId}`);
 		} catch (error) {
 			this.logger.error(`Failed to update PandaDoc URL for record ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	async updateStripePayment(recordId: string): Promise<void> {
+		try {
+			const zohoRecord = await this.zohoService.getRecordById(recordId);
+			const stripeCustomerId = zohoRecord.Stripe_Customer_Id;
+			if (!stripeCustomerId) {
+				this.logger.warn(`No Stripe Customer ID found for record ${recordId}`);
+				return;
+			}
+			const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
+			if (!response) {
+				this.logger.warn(`No payment info found for Stripe Customer ID ${stripeCustomerId}`);
+				return;
+			}
+			const formatDate = (date: Date | string) => {
+				const d = new Date(date);
+				const day = String(d.getDate()).padStart(2, '0');
+				const month = d.toLocaleString('en-US', { month: 'short' });
+				const year = d.getFullYear();
+				return `${day}-${month}-${year}`;
+			};
+			const payload = {
+				Stripe_Payment_ID: response.paymentId,
+				Payment_Source: response.paymentSource,
+				Payment_Date: response.paymentDate ? formatDate(response.paymentDate) : '',
+				Payment: '',
+				Payment_Status: response.paymentStatus
+			};
+			await this.zohoService.updateRecord(recordId, payload);
+		} catch (error) {
+			this.logger.error(`Failed to update Stripe payment for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

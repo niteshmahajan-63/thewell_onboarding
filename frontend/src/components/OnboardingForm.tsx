@@ -78,10 +78,6 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
         }
     }
 
-    const handleCalendlyComplete = () => {
-        handleComplete()
-    }
-
     useEffect(() => {
         const currentStepId = String(currentStep);
 
@@ -96,7 +92,31 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     }, [currentStep, completedSteps, setCurrentStep, getNextStep, steps]);
 
     const currentStepObject = getCurrentStepObject()
-    // const isLastStep = !getNextStep()
+
+    // Check if all steps are completed
+    const allStepsCompleted = steps.length > 0 && completedSteps.size === steps.length;
+
+    if (allStepsCompleted) {
+        return (
+            <div className="w-full mx-auto space-y-8">
+                <Card className="w-full bg-white border-gray-300 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-well-dark via-well-primary to-well-light w-full">
+                        <CardTitle className="text-center text-white font-bold text-xl">
+                            Onboarding Complete
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 min-h-[400px] flex items-center justify-center bg-white w-full">
+                        <div className="text-center">
+                            <div className="bg-green-100 border-2 border-green-400 rounded-xl p-12 max-w-md mx-auto">
+                                <p className="text-2xl text-green-700 font-bold mb-4">🎉 All your steps have been completed!</p>
+                                <p className="text-lg text-green-800">Thank you for completing the onboarding process.</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
     if (!currentStepObject) {
         return (
@@ -141,7 +161,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
 
                     {/* Meeting Step */}
                     {currentStepObject.type === 'meeting' && !stepCompleting && (
-                        <CalendlyBooking onBookingComplete={handleCalendlyComplete} recordId={recordId} />
+                        <CalendlyBooking handleStepComplete={handleStepComplete} recordId={recordId} />
                     )}
                 </CardContent>
             </Card>

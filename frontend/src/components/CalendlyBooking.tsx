@@ -3,18 +3,18 @@ import { InlineWidget } from 'react-calendly';
 
 // Define props interface for the component
 interface CalendlyBookingProps {
-    onBookingComplete: () => void;
+    handleStepComplete: (completed: boolean) => void;
     recordId: string;
 }
 
-const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ onBookingComplete, recordId }) => {
+const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ handleStepComplete, recordId }) => {
     const [isBookingComplete, setIsBookingComplete] = useState(false)
 
     useEffect(() => {
         const handler = (e: MessageEvent) => {
             if (e.data?.event === 'calendly.event_scheduled') {
                 setIsBookingComplete(true);
-                onBookingComplete();
+                handleStepComplete(true);
             }
         };
 
@@ -22,7 +22,7 @@ const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ onBookingComplete, re
         return () => {
             window.removeEventListener('message', handler);
         };
-    }, [onBookingComplete]);
+    }, [handleStepComplete]);
 
     if (isBookingComplete) {
         return (
@@ -53,7 +53,7 @@ const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ onBookingComplete, re
             <div className="bg-white border-2 border-well-primary rounded-xl p-4 mx-auto">
                 <div className="calendly-embed" style={{ width: "100%" }}>
                     <InlineWidget
-                        url="https://calendly.com/pradeep-kumar-emailthewell/30min"
+                        url="https://calendly.com/brandon-thewell/introductory-discussion-20min"
                         styles={{ height: '700px' }}
                         utm={{ utmContent: recordId }}
                     />

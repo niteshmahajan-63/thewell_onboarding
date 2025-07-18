@@ -162,8 +162,7 @@ export class OnboardingService {
 			if (!record) {
 				throw new Error(`Record with ID ${recordId} not found`);
 			}
-			// const stripeCustomerId = record.stripeCustomerId;
-			const stripeCustomerId = "cus_Rw3yif7QzbeWFe";
+			const stripeCustomerId = record.stripeCustomerId;
 			const amount = record.amount * 100;
 
 			const paymentIntent = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);

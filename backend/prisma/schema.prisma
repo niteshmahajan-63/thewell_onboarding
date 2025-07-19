@@ -46,19 +46,20 @@ model CalendlyBookings {
 }
 
 model StripePayments {
-  id               Int      @id @default(autoincrement())
-  zohoRecordId     String   @unique @map("zoho_record_id")
-  customerId       String   @map("customer_id")
-  paymentDate      DateTime @map("payment_date")
-  paymentStatus    String   @map("payment_status")
-  paymentId        String   @map("payment_id")
-  payment          String   @map("payment")
-  amount           Decimal  @map("amount") @db.Decimal(10, 2)
-  paymentSource    String   @map("payment_source")
-  invoiceId        String?  @map("invoice_id")
-  hostedInvoiceUrl String?  @map("hosted_invoice_url")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id               Int       @id @default(autoincrement())
+  zohoRecordId     String    @unique @map("zoho_record_id")
+  clientSecret     String    @unique @map("client_secret")
+  customerId       String    @map("customer_id")
+  paymentDate      DateTime? @map("payment_date")
+  paymentStatus    String?   @map("payment_status")
+  paymentId        String?   @map("payment_id")
+  payment          String?   @map("payment")
+  amount           Decimal?  @map("amount") @db.Decimal(10, 2)
+  paymentSource    String?   @map("payment_source")
+  invoiceId        String?   @map("invoice_id")
+  hostedInvoiceUrl String?   @map("hosted_invoice_url")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@map("stripe_payments")
 }

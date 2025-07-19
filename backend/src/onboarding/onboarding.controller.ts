@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Logger, Post, Body } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import { ApiResponse, createSuccessResponse } from '../common/utils';
-import { CreateCheckoutSessionDto, GetRecordByIdDto, GetOnboardingStepsDto, CompleteStepDto, CreatePaymentIntentDto } from './dto';
+import { CreateCheckoutSessionDto, GetRecordByIdDto, CompleteStepDto, CreatePaymentIntentDto } from './dto';
 
 @Controller('api/onboarding')
 export class OnboardingController {
@@ -76,12 +76,29 @@ export class OnboardingController {
 	@Post('create-payment-intent')
 	async createPaymentIntent(
 		@Body() paymentIntentDto: CreatePaymentIntentDto,
-	): Promise<ApiResponse<{ clientSecret: string, paymentIntentId: string }>> {
+	): Promise<ApiResponse<string>> {
 		try {
 			const paymentIntent = await this.onboardingService.createPaymentIntent(paymentIntentDto.recordId);
 			return createSuccessResponse(paymentIntent, 'Payment intent created successfully');
 		} catch (error) {
 			this.logger.error(`Failed to create payment intent for record ${paymentIntentDto.recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Get('download-invoice')
+	async downloadInvoice(
+		@Query() query: GetRecordByIdDto
+	): Promise<ApiResponse<string>> {
+		const { recordId } = query;
+
+		this.logger.log(`Downloading invoice for record: ${recordId}`);
+
+		try {
+			const pandadocSessionId = await this.onboardingService.downloadInvoice(recordId);
+			return createSuccessResponse(pandadocSessionId, 'Invoice downloaded successfully');
+		} catch (error) {
+			this.logger.error(`Failed to download invoice for record ${recordId}:`, error.message);
 			throw error;
 		}
 	}

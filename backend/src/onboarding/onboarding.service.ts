@@ -151,12 +151,12 @@ export class OnboardingService {
 	/**
 	 * Creates a payment intent for Stripe Elements
 	 * @param recordId 
-	 * @returns { clientSecret: string, paymentIntentId: string } - The payment intent client secret and ID
+	 * @returns { string } - The payment intent client secret
 	 * @throws { Error } - If the payment intent creation fails
 	 */
 	async createPaymentIntent(
 		recordId: string,
-	): Promise<{ clientSecret: string, paymentIntentId: string }> {
+	): Promise<string> {
 		try {
 			const record = await this.onboardingRepository.findRecordById(recordId);
 			if (!record) {
@@ -165,9 +165,14 @@ export class OnboardingService {
 			const stripeCustomerId = record.stripeCustomerId;
 			const amount = record.amount * 100;
 
-			const paymentIntent = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);
+			const clientSecret = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);
+			await this.onboardingRepository.storeStripePayment({
+				zohoRecordId: recordId,
+				clientSecret: clientSecret,
+				customerId: stripeCustomerId,
+			});
 			this.logger.log(`Payment intent created successfully for record: ${recordId}`);
-			return paymentIntent;
+			return clientSecret;
 		} catch (error) {
 			this.logger.error(`Failed to create payment intent for record ${recordId}: ${error.message}`);
 			throw error;
@@ -352,6 +357,21 @@ export class OnboardingService {
 			await this.zohoService.updateRecord(recordId, payload);
 		} catch (error) {
 			this.logger.error(`Failed to update Stripe payment for record ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	async downloadInvoice(recordId: string): Promise<string> {
+		this.logger.log(`Downloading invoice for record: ${recordId}`);
+
+		try {
+			const stripePaymentRecord = await this.onboardingRepository.getStripePaymentRecord(recordId);
+			if (!stripePaymentRecord) {
+				throw new Error(`No Stripe payment record found for record ID ${recordId}`);
+			}
+			return stripePaymentRecord.hostedInvoiceUrl;
+		} catch (error) {
+			this.logger.error(`Failed to download invoice for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

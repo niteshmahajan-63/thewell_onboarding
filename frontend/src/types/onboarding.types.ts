@@ -83,8 +83,13 @@ export interface PaymentIntentResponse {
     message: string;
     timestamp: string;
     statusCode: number;
-    data: {
-        clientSecret: string;
-        paymentIntentId: string;
-    };
+    data: string;
+}
+
+export interface DownloadInvoiceResponse {
+    success: boolean;
+    message: string;
+    timestamp: string;
+    statusCode: number;
+    data: string;
 }

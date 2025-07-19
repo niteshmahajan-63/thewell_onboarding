@@ -165,14 +165,16 @@ export class WebhookService {
             case 'payment_intent.succeeded':
                 try {
                     this.logger.log('Stripe payment intent succeeded');
-                    
+
                     const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
-                    // PaymentIntent does not have 'invoice' property
-                    // If you need to link to an invoice, you must handle 'invoice.payment_succeeded' event instead
+                    let invoice = null;
+                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                    }
 
                     await this.webhookRepository.storeStripePayment({
-                        zohoRecordId: paymentIntent.metadata?.recordId,
+                        clientSecret: paymentIntent.client_secret,
                         customerId: paymentIntent.customer,
                         paymentDate: new Date(paymentIntent.created * 1000),
                         paymentStatus: paymentIntent.status,
@@ -180,8 +182,8 @@ export class WebhookService {
                         payment: 'Setup Fee',
                         amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
                         paymentSource: 'Credit Card/Debit Card',
-                        invoiceId: null,
-                        hostedInvoiceUrl: null,
+                        invoiceId: invoice ? invoice.id : null,
+                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
                         createdAt: new Date(paymentIntent.created * 1000),
                         updatedAt: new Date()
                     });

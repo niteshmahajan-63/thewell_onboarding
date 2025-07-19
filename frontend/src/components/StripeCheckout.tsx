@@ -140,8 +140,8 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                     const request: PaymentIntentRequest = { recordId };
                     const response = await createPaymentIntent(request);
 
-                    if (response.data.clientSecret) {
-                        setClientSecret(response.data.clientSecret);
+                    if (response.data) {
+                        setClientSecret(response.data);
                     } else {
                         setError('No client secret returned from the server');
                     }
@@ -258,7 +258,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                             Complete Your Payment
                         </h1>
                         <p className="text-gray-600 text-sm leading-relaxed">
-                            Secure payment processing to complete your onboarding.
+                            Your payment receipt will be ready to download after you finish the onboarding steps.
                         </p>
                     </div>
 

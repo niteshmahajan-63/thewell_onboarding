@@ -90,7 +90,7 @@ export class StripeService {
             throw new Error(`Failed to retrieve invoice: ${error.message}`);
         }
     }
-    
+
     /**
      * Creates a payment intent for Stripe Elements
      * @param recordId The record ID for the payment intent
@@ -98,24 +98,69 @@ export class StripeService {
      * @param amount The amount to be charged in cents
      * @returns The payment intent client secret and id
      */
-    async createPaymentIntent(recordId: string, stripeCustomerId: string, amount: number): Promise<{ clientSecret: string, paymentIntentId: string }> {
+    async createPaymentIntent(recordId: string, stripeCustomerId: string, amount: number): Promise<string> {
         try {
-            const paymentIntent = await this.stripe.paymentIntents.create({
-                amount,
-                currency: 'usd',
+            const invoice = await this.stripe.invoices.create({
                 customer: stripeCustomerId,
+                collection_method: 'send_invoice',
+                days_until_due: 0,
                 metadata: {
                     recordId: recordId,
                 },
-                payment_method_types: ['card'],
+                payment_settings: {
+                    payment_method_types: ['card'],
+                }
             });
-            
-            return { 
-                clientSecret: paymentIntent.client_secret,
-                paymentIntentId: paymentIntent.id
-            };
+
+            if (invoice) {
+                await this.stripe.invoiceItems.create({
+                    customer: stripeCustomerId,
+                    amount: amount,
+                    currency: 'usd',
+                    invoice: invoice.id,
+                });
+
+                const finalizedInvoice = await this.stripe.invoices.finalizeInvoice(invoice.id, {
+                    expand: ['confirmation_secret'],
+                });
+
+                if (finalizedInvoice) {
+                    const client_secret = finalizedInvoice.confirmation_secret.client_secret;
+                    return client_secret;
+                } else {
+                    throw new Error('Failed to finalize invoice');
+                }
+            } else {
+                throw new Error('Failed to create invoice');
+            }
         } catch (error) {
             throw new Error(`Failed to create payment intent: ${error.message}`);
+        }
+    }
+
+    async createInvoice(paymentIntentId: string): Promise<Stripe.Invoice> {
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+            const customerId = typeof paymentIntent.customer === 'string' ? paymentIntent.customer : paymentIntent.customer?.id;
+
+            await this.stripe.invoiceItems.create({
+                customer: customerId,
+                amount: paymentIntent.amount,
+                currency: 'usd',
+                description: 'Invoice for payment intent',
+            });
+
+            const invoice = await this.stripe.invoices.create({
+                customer: customerId,
+                auto_advance: true,
+            });
+
+            const finalizedInvoice = await this.stripe.invoices.finalizeInvoice(invoice.id);
+
+            return invoice;
+        } catch (error) {
+            throw new Error(`Failed to create invoice: ${error.message}`);
         }
     }
 }

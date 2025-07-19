@@ -145,4 +145,24 @@ export class OnboardingRepository {
             where: { zohoRecordId: recordId },
         });
     }
+
+    async storeStripePayment(paymentData: any): Promise<any> {
+        const existingPayment = await this.prisma.stripePayments.findFirst({
+            where: { zohoRecordId: paymentData.zohoRecordId },
+        });
+        if (existingPayment) {
+            this.logger.log(`Updating existing Stripe payment for zohoRecordId: ${paymentData.zohoRecordId}`);
+            return this.prisma.stripePayments.update({
+                where: { zohoRecordId: paymentData.zohoRecordId },
+                data: paymentData,
+            });
+        }
+        else {
+            this.logger.log(`Creating new Stripe payment for zohoRecordId: ${paymentData.zohoRecordId}`);
+            return this.prisma.stripePayments.create({
+                data: paymentData,
+            });
+        }
+
+    }
 }

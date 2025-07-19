@@ -5,7 +5,7 @@ import { PrismaService } from '../common/prisma.service';
 export class WebhookRepository {
     private readonly logger = new Logger(WebhookRepository.name);
 
-    constructor(private prismaService: PrismaService) {}
+    constructor(private prismaService: PrismaService) { }
 
     /**
      * Check if a Calendly booking exists
@@ -30,7 +30,7 @@ export class WebhookRepository {
     async storeCalendlyBooking(zohoRecordId: string, payload: any): Promise<any> {
         try {
             const existingBooking = await this.findCalendlyBooking(zohoRecordId);
-            
+
             if (existingBooking) {
                 this.logger.log(`Updating existing Calendly booking for zohoRecordId: ${zohoRecordId}`);
                 return await this.prismaService.calendlyBookings.update({
@@ -57,11 +57,11 @@ export class WebhookRepository {
         }
     }
 
-    async findStripePayment(zohoRecordId: string): Promise<any> {
+    async findStripePayment(clientSecret: string): Promise<any> {
         try {
-            return await this.prismaService.stripePayments.findUnique({
+            return await this.prismaService.stripePayments.findFirst({
                 where: {
-                    zohoRecordId: zohoRecordId
+                    clientSecret: clientSecret
                 }
             });
         } catch (error) {
@@ -72,13 +72,13 @@ export class WebhookRepository {
 
     async storeStripePayment(stripePaymentData: any): Promise<any> {
         try {
-            const existingPayment = await this.findStripePayment(stripePaymentData.zohoRecordId);
+            const existingPayment = await this.findStripePayment(stripePaymentData.clientSecret);
 
             if (existingPayment) {
                 this.logger.log(`Updating existing Stripe payment for zohoRecordId: ${stripePaymentData.zohoRecordId}`);
                 return await this.prismaService.stripePayments.update({
                     where: {
-                        zohoRecordId: stripePaymentData.zohoRecordId
+                        clientSecret: stripePaymentData.clientSecret
                     },
                     data: {
                         ...stripePaymentData,
@@ -86,10 +86,7 @@ export class WebhookRepository {
                     }
                 });
             } else {
-                this.logger.log(`Creating new Stripe payment for zohoRecordId: ${stripePaymentData.zohoRecordId}`);
-                return await this.prismaService.stripePayments.create({
-                    data: stripePaymentData
-                });
+                this.logger.log(`Stripe payment not found!`);
             }
         } catch (error) {
             this.logger.error(`Error storing Stripe payment: ${error.message}`);

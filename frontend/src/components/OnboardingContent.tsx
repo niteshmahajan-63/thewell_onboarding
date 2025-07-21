@@ -1,7 +1,7 @@
 import React from 'react'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
 import OnboardingHeader from './OnboardingHeader'
-import DemoStepSelector from './DemoStepSelector'
+// import DemoStepSelector from './DemoStepSelector'
 import StepIndicator from './StepIndicator'
 import OnboardingForm from './OnboardingForm'
 
@@ -56,17 +56,17 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-	const allStepsCompleted = steps.length > 0 && completedSteps.size === steps.length;
+	// const allStepsCompleted = steps.length > 0 && completedSteps.size === steps.length;
 	return (
 		<div className="space-y-8">
 			<OnboardingHeader />
-			{!allStepsCompleted && (
+			{/* {!allStepsCompleted && (
 				<DemoStepSelector 
 					steps={steps} 
 					currentStep={currentStep}
 					setCurrentStep={setCurrentStep}
 				/>
-			)}
+			)} */}
 			<StepIndicator 
 				steps={steps} 
 				currentStep={currentStep} 

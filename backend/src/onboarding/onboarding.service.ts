@@ -266,7 +266,7 @@ export class OnboardingService {
 
 			if (dbRecord.stripePaymentCompleted !== "Yes") {
 				const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
-				if (response) {
+				if (response && response.paymentId !== null) {
 					await this.updateStripePayment(recordId);
 					await this.completeStep(recordId, 2);
 				}

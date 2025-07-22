@@ -249,26 +249,33 @@ export class OnboardingService {
 		try {
 			const record = await this.getRecordById(recordId);
 
-			const pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+			let pandadoc_session_id = null;
+			if (record.agreementRequired === 'Yes') {
+				pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
+			}
 
 			const dbRecord = await this.onboardingRepository.findRecordById(recordId);
 			if (!dbRecord) {
 				throw new Error(`Record with ID ${recordId} not found in the database`);
 			}
 
-			if (dbRecord.pandadocAgreementCompleted !== "Yes") {
-				const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
-				if (response) {
-					await this.updatePandaDocURL(recordId);
-					await this.completeStep(recordId, 1);
+			if (dbRecord.agreementRequired === 'Yes') {
+				if (dbRecord.pandadocAgreementCompleted !== "Yes") {
+					const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
+					if (response) {
+						await this.updatePandaDocURL(recordId);
+						await this.completeStep(recordId, 1);
+					}
 				}
 			}
 
-			if (dbRecord.stripePaymentCompleted !== "Yes") {
-				const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
-				if (response && response.paymentId !== null) {
-					await this.updateStripePayment(recordId);
-					await this.completeStep(recordId, 2);
+			if (dbRecord.stripeRequired === 'Yes') {
+				if (dbRecord.stripePaymentCompleted !== "Yes") {
+					const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
+					if (response && response.paymentId !== null) {
+						await this.updateStripePayment(recordId);
+						await this.completeStep(recordId, 2);
+					}
 				}
 			}
 

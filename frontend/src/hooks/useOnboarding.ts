@@ -32,6 +32,12 @@ export const useOnboarding = (recordId: string) => {
             setCompanyName(record.Company_Name || null)
             setAmount(record.Amount || null)
             setCalendlyBookingURL(record.Calendly_Booking_URL.value)
+
+            if (record.Agreement_Required === "No" && record.Stripe_Required === "No") {
+                setCurrentStep(3);
+            } else if (record.Agreement_Required === "No") {
+                setCurrentStep(2);
+            }
             
             const completedStepIds = new Set<string>()
             steps.forEach(step => {

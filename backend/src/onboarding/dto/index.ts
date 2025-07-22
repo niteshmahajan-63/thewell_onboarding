@@ -7,18 +7,6 @@ export class GetRecordByIdDto {
 	recordId: string;
 }
 
-export class CreateCheckoutSessionDto {
-	@IsString()
-	@IsNotEmpty()
-	recordId: string;
-}
-
-export class GetOnboardingStepsDto {
-	@IsString()
-	@IsOptional()
-	recordId?: string;
-}
-
 export class CompleteStepDto {
 	@IsString()
 	@IsNotEmpty()

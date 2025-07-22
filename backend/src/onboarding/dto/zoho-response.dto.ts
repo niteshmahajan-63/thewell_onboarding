@@ -11,9 +11,3 @@ export interface ZohoRecordResponse {
 	data: Record<string, any>;
 	message: string;
 }
-
-export interface ZohoErrorResponse {
-	code: string;
-	message: string;
-	details?: Record<string, any>;
-}

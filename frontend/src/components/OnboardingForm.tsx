@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import PandaDocSigning from './PandaDocSigning'
 import StripeCheckout from './StripeCheckout'
 import CalendlyBooking from './CalendlyBooking'
-import { completeStep } from '../services/onboardingService'
-import { downloadInvoice } from '../services/onboardingService';
+import { completeStep, downloadReceipt } from '../services/onboardingService'
 
 interface Step {
     id: string | number;
@@ -101,16 +100,16 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     const allStepsCompleted = steps.length > 0 && completedSteps.size === steps.length;
 
     if (allStepsCompleted) {
-        const handleDownloadInvoice = async () => {
+        const handleDownloadReceipt = async () => {
             try {
-                const data = await downloadInvoice(recordId);
+                const data = await downloadReceipt(recordId);
                 if (data) {
                     window.open(data.data, '_blank');
                 } else {
-                    console.error('Could not download invoice. Please contact support.');
+                    console.error('Could not download payment receipt. Please contact support.');
                 }
             } catch (err) {
-                console.error('Error downloading invoice:', err);
+                console.error('Error downloading payment receipt:', err);
             }
         };
         return (
@@ -135,7 +134,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                                 <button
                                     className="mt-8 px-6 py-3 font-semibold shadow transition-colors"
                                     style={{ backgroundColor: '#BE9E44', color: '#fff', border: '1px solid #000', borderRadius: 0 }}
-                                    onClick={handleDownloadInvoice}
+                                    onClick={handleDownloadReceipt}
                                 >
                                     Download Payment Receipt
                                 </button>

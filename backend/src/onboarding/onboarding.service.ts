@@ -124,31 +124,6 @@ export class OnboardingService {
 	}
 
 	/**
-	 * Creates a checkout session for the customer
-	 * @param recordId 
-	 * @returns { url: string } - The URL for the checkout session
-	 * @throws { Error } - If the checkout session creation fails
-	 */
-	async createCheckoutSession(
-		recordId: string,
-	): Promise<{ url: string }> {
-		this.logger.log(`Creating checkout session for record: ${recordId}`);
-
-		try {
-			// TODO: fetch stripeCustomerId and amount from the database
-			const stripeCustomerId = 'cus_SdVWP6tYPR0Os8';
-			const amount = 1000;
-
-			const session = await this.stripeService.createCheckoutSession(recordId, stripeCustomerId, amount);
-			this.logger.log(`Checkout session created successfully for record: ${recordId}`);
-			return { url: session.url };
-		} catch (error) {
-			this.logger.error(`Failed to create checkout session for record ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
-
-	/**
 	 * Creates a payment intent for Stripe Elements
 	 * @param recordId 
 	 * @returns { string } - The payment intent client secret
@@ -162,17 +137,25 @@ export class OnboardingService {
 			if (!record) {
 				throw new Error(`Record with ID ${recordId} not found`);
 			}
-			const stripeCustomerId = record.stripeCustomerId;
-			const amount = record.amount * 100;
 
-			const clientSecret = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);
-			await this.onboardingRepository.storeStripePayment({
-				zohoRecordId: recordId,
-				clientSecret: clientSecret,
-				customerId: stripeCustomerId,
-			});
-			this.logger.log(`Payment intent created successfully for record: ${recordId}`);
-			return clientSecret;
+			const existingPaymentRecord = await this.onboardingRepository.getStripePaymentRecord(recordId);
+
+			if (existingPaymentRecord && existingPaymentRecord.clientSecret) {
+				this.logger.log(`Payment intent already exists for record: ${recordId}`);
+				return existingPaymentRecord.clientSecret;
+			} else {
+				const stripeCustomerId = record.stripeCustomerId;
+				const amount = record.amount * 100;
+				const paymentIntent = await this.stripeService.createPaymentIntent(recordId, stripeCustomerId, amount);
+				await this.onboardingRepository.storeStripePayment({
+					zohoRecordId: recordId,
+					clientSecret: paymentIntent.client_secret,
+					customerId: stripeCustomerId,
+					invoiceId: paymentIntent.invoice_id,
+				});
+				this.logger.log(`Payment intent created successfully for record: ${recordId}`);
+				return paymentIntent.client_secret;
+			}
 		} catch (error) {
 			this.logger.error(`Failed to create payment intent for record ${recordId}: ${error.message}`);
 			throw error;
@@ -379,6 +362,27 @@ export class OnboardingService {
 			return stripePaymentRecord.hostedInvoiceUrl;
 		} catch (error) {
 			this.logger.error(`Failed to download invoice for record ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	async downloadDueInvoice(recordId: string): Promise<string> {
+		this.logger.log(`Downloading due invoice for record: ${recordId}`);
+
+		try {
+			const stripePaymentRecord = await this.onboardingRepository.getStripePaymentRecord(recordId);
+
+			if (!stripePaymentRecord || !stripePaymentRecord.invoiceId) {
+				throw new Error(`No Invoice found for record ID ${recordId}`);
+			}
+
+			const invoice = await this.stripeService.getInvoice(stripePaymentRecord.invoiceId);
+			if (!invoice) {
+				throw new Error(`No Stripe payment record found for record ID ${recordId}`);
+			}
+			return invoice.invoice_pdf || '';
+		} catch (error) {
+			this.logger.error(`Failed to download due invoice for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

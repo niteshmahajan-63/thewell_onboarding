@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
-import { createPaymentIntent } from '../services/onboardingService'
+import { createPaymentIntent, downloadInvoice } from '../services/onboardingService'
 import type { PaymentIntentRequest } from '../types/onboarding.types'
 import {
     Elements,
@@ -111,7 +111,14 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
                 <Button
                     type="submit"
                     disabled={isLoading || !stripe || !elements}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 w-full rounded-md font-medium transition-all transform hover:-translate-y-0.5"
+                    className="px-6 py-3 w-full rounded-md font-medium transition-all transform hover:-translate-y-0.5"
+                    style={{ 
+                        backgroundColor: '#BE9E44', 
+                        color: '#fff',
+                        transition: 'background-color 0.2s ease-in-out'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#967D35'} 
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#BE9E44'}
                 >
                     {isLoading ? (
                         <span className="flex items-center justify-center">
@@ -204,6 +211,19 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
         appearance,
     };
 
+    const handleDownloadInvoice = async () => {
+        try {
+            const data = await downloadInvoice(recordId);
+            if (data) {
+                window.open(data.data, '_blank');
+            } else {
+                console.error('Could not download invoice. Please contact support.');
+            }
+        } catch (err) {
+            console.error('Error downloading invoice:', err);
+        }
+    };
+
     return (
         <div className="w-full h-screen flex bg-gray-50 overflow-hidden">
             {/* Left Panel */}
@@ -236,16 +256,28 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                         </div>
 
                         {/* Center Section - Large Visual Card */}
-                        <div className="flex items-center justify-center mb-6">
+                        <div className="flex items-center justify-center mb-6 relative">
                             <img
                                 src="/78792.jpg"
                                 alt="Visual Card"
                                 className="w-[30rem] h-90 object-cover rounded-2xl shadow-2xl border border-white/20 bg-white/10 backdrop-blur-sm"
                             />
+                            <button
+                                className="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full shadow-lg transition-all duration-200 font-medium" 
+                                style={{ 
+                                    backgroundColor: '#BE9E44', 
+                                    color: '#fff',
+                                    transition: 'background-color 0.2s ease-in-out'
+                                }} 
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#967D35'} 
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#BE9E44'}
+                                onClick={handleDownloadInvoice}
+                            >
+                                Download Invoice
+                            </button>
                         </div>
                     </div>
                 </div>
-
 
             </div>
 

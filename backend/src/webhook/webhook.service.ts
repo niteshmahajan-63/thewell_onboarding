@@ -95,7 +95,6 @@ export class WebhookService {
         switch (eventType) {
             case 'invitee.created':
                 // Check if utm_content exists (which contains zohoRecordId)
-                console.log(payload);
                 const zohoRecordId = payload.payload.tracking?.utm_content;
 
                 if (!zohoRecordId) {

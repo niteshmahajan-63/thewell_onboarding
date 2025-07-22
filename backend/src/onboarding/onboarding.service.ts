@@ -250,7 +250,7 @@ export class OnboardingService {
 			const record = await this.getRecordById(recordId);
 
 			let pandadoc_session_id = null;
-			if (record.agreementRequired === 'Yes') {
+			if (record.Agreement_Required === 'Yes') {
 				pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
 			}
 

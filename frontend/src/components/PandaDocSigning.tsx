@@ -50,14 +50,14 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 	// If there's an error, display it
 	if (error) {
 		return (
-			<Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 mb-4">
-				<CardContent className="p-4 text-center space-y-2">
-					<div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-						<AlertCircle className="w-6 h-6 text-red-600" />
+			<Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 mb-4 mx-4 sm:mx-0">
+				<CardContent className="p-3 sm:p-4 text-center space-y-2">
+					<div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+						<AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
 					</div>
 					<div className="space-y-1">
-						<h4 className="text-red-800 font-semibold">Error</h4>
-						<p className="text-red-700 text-sm">{error}</p>
+						<h4 className="text-red-800 font-semibold text-sm sm:text-base">Error</h4>
+						<p className="text-red-700 text-xs sm:text-sm">{error}</p>
 					</div>
 				</CardContent>
 			</Card>
@@ -77,19 +77,19 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 	}
 
 	return (
-		<div className="w-full mx-auto">
+		<div className="w-full mx-auto px-4 sm:px-0">
 			<div className="text-center mb-4">
-				<h3 className="text-xl font-bold text-gray-900">Service Agreement</h3>
-				<p className="text-gray-600 mx-auto">
+				<h3 className="text-lg sm:text-xl font-bold text-gray-900">Service Agreement</h3>
+				<p className="text-sm sm:text-base text-gray-600 mx-auto">
 					Please review and sign our service agreement to begin your journey with The Well.
 				</p>
 			</div>
 
 			{isLoading && (
-				<div className="flex justify-center items-center py-4 mb-4">
-					<div className="flex items-center space-x-3">
-						<Loader2 className="h-5 w-5 animate-spin text-well-primary" />
-						<span className="text-gray-600">Loading document...</span>
+				<div className="flex justify-center items-center py-3 sm:py-4 mb-4">
+					<div className="flex items-center space-x-2 sm:space-x-3">
+						<Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-well-primary" />
+						<span className="text-sm sm:text-base text-gray-600">Loading document...</span>
 					</div>
 				</div>
 			)}

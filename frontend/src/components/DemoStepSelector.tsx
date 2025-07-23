@@ -19,20 +19,20 @@ const DemoStepSelector: React.FC<DemoStepSelectorProps> = ({ steps, currentStep,
         setCurrentStep(stepId)
     }
     return (
-        <div className="flex justify-center">
-            <Card className="p-4 bg-gray-800 border border-gray-700 w-full max-w-md">
+        <div className="flex justify-center px-4 sm:px-0">
+            <Card className="p-3 sm:p-4 bg-gray-800 border border-gray-700 w-full max-w-md">
                 <div className="flex flex-col items-center justify-center">
                     <div className="w-full text-center mb-2">
-                        <div className="text-yellow-400 text-sm font-semibold px-2 py-1 rounded-md inline-block mb-2">
+                        <div className="text-yellow-400 text-xs sm:text-sm font-semibold px-2 py-1 rounded-md inline-block mb-2">
                             Demo Controls
                         </div>
-                        <h3 className="text-gray-300 font-medium">Jump to step:</h3>
+                        <h3 className="text-gray-300 text-sm sm:text-base font-medium">Jump to step:</h3>
                     </div>
 
                     <select
                         value={currentStep}
                         onChange={handleStepChange}
-                        className="w-full p-2 rounded-md border border-gray-600 bg-gray-700 text-white cursor-pointer"
+                        className="w-full p-2 text-sm sm:text-base rounded-md border border-gray-600 bg-gray-700 text-white cursor-pointer"
                     >
                         {steps.map((step) => (
                             <option key={step.id} value={step.id}>

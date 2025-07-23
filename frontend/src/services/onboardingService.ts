@@ -4,7 +4,8 @@ import type {
     DownloadInvoiceResponse,
     OnboardingRecordResponse,
     PaymentIntentRequest,
-    PaymentIntentResponse
+    PaymentIntentResponse,
+    PaymentStatusResponse
 } from "../types/onboarding.types";
 import api from "./api";
 
@@ -157,6 +158,38 @@ export const downloadInvoice = async (recordId: string): Promise<DownloadInvoice
         }
 
         let message = "Something went wrong while fetching record";
+        if (error instanceof Error) {
+            message = error.message;
+        } else if (typeof error === "string") {
+            message = error;
+        } else if (typeof error === "object" && error !== null && "message" in error) {
+            message = (error as { message: string }).message;
+        }
+        throw new Error(message);
+    }
+};
+
+export const checkPaymentStatus = async (paymentIntentId: string): Promise<PaymentStatusResponse> => {
+    try {
+        const url = `/onboarding/check-payment-status?paymentIntentId=${paymentIntentId}`;
+        const response = await api.get<PaymentStatusResponse>(url);
+
+        if (!response.data.success) {
+            const errorMessage = response.data.message || "Failed to fetch payment intent status";
+            throw new Error(errorMessage);
+        }
+
+        return response.data;
+    } catch (error: any) {
+        if (error.response?.data) {
+            const apiError = error.response.data;
+            if (!apiError.success) {
+                const errorMessage = apiError.message || "Failed to fetch payment intent status";
+                throw new Error(errorMessage);
+            }
+        }
+
+        let message = "Something went wrong while fetching payment intent status";
         if (error instanceof Error) {
             message = error.message;
         } else if (typeof error === "string") {

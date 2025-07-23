@@ -40,7 +40,7 @@ export class StripeService {
                     recordId: recordId,
                 },
                 payment_settings: {
-                    payment_method_types: ['card'],
+                    payment_method_types: ['card', 'us_bank_account'],
                 }
             });
 
@@ -59,7 +59,7 @@ export class StripeService {
 
                 if (finalizedInvoice) {
                     const client_secret = finalizedInvoice.confirmation_secret.client_secret;
-                    
+
                     return {
                         client_secret: client_secret,
                         invoice_id: invoice.id,
@@ -72,6 +72,19 @@ export class StripeService {
             }
         } catch (error) {
             throw new Error(`Failed to create payment intent: ${error.message}`);
+        }
+    }
+
+    async getPaymentIntent(paymentIntentId: string): Promise<{ status: string, amount: number, currency: string }> {
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+            return {
+                status: paymentIntent.status,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency
+            };
+        } catch (error) {
+            throw new Error(`Failed to check payment status: ${error.message}`);
         }
     }
 }

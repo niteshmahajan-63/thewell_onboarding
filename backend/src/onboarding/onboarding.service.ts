@@ -386,4 +386,20 @@ export class OnboardingService {
 			throw error;
 		}
 	}
+
+	async checkPaymentStatus(paymentIntentId: string): Promise<{ status: string, amount: number, currency: string }> {
+		this.logger.log(`Checking payment status for payment intent: ${paymentIntentId}`);
+
+		try {
+			const paymentIntent = await this.stripeService.getPaymentIntent(paymentIntentId);
+			if (!paymentIntent) {
+				throw new Error(`Payment intent with ID ${paymentIntentId} not found`);
+			}
+
+			return paymentIntent;
+		} catch (error) {
+			this.logger.error(`Failed to check payment status for payment intent ${paymentIntentId}: ${error.message}`);
+			throw error;
+		}
+	}
 }

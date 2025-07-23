@@ -23,3 +23,9 @@ export class CreatePaymentIntentDto {
 	@IsNotEmpty()
 	recordId: string;
 }
+
+export class CheckPaymentStatusDto {
+	@IsString()
+	@IsNotEmpty()
+	paymentIntentId: string;
+}

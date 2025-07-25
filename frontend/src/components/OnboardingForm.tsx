@@ -31,8 +31,6 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     completedSteps,
     setCompletedSteps
 }) => {
-    console.log(steps);
-    console.log(currentStep);
     
     const [stepCompleting, setStepCompleting] = useState(false)
 

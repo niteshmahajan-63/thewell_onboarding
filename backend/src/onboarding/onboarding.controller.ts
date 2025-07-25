@@ -108,16 +108,16 @@ export class OnboardingController {
 	@Get('check-payment-status')
 	async checkPaymentStatus(
 		@Query() query: CheckPaymentStatusDto
-	): Promise<ApiResponse<{ status: string, amount: number, currency: string }>> {
-		const { paymentIntentId } = query;
+	): Promise<ApiResponse<{ status: string }>> {
+		const { recordId } = query;
 
-		this.logger.log(`Checking payment status for payment intent: ${paymentIntentId}`);
+		this.logger.log(`Checking payment status for recordId: ${recordId}`);
 
 		try {
-			const response = await this.onboardingService.checkPaymentStatus(paymentIntentId);
+			const response = await this.onboardingService.checkPaymentStatus(recordId);
 			return createSuccessResponse(response, 'Payment status checked successfully');
 		} catch (error) {
-			this.logger.error(`Failed to check payment status for payment intent ${paymentIntentId}:`, error.message);
+			this.logger.error(`Failed to check payment status for recordId ${recordId}:`, error.message);
 			throw error;
 		}
 	}

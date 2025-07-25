@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PaymentGateway } from './payment.gateway';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { CalendlyWebhookPayload } from './dto/calendly.dto';
@@ -16,7 +17,8 @@ export class WebhookService {
     constructor(
         private configService: ConfigService,
         private webhookRepository: WebhookRepository,
-        private stripeService: StripeService
+        private stripeService: StripeService,
+        private paymentGateway: PaymentGateway
     ) {
         // Initialize Calendly webhook secret
         this.calendlyWebhookSecret = this.configService.get<string>('CALENDLY_WEBHOOK_SIGNING_KEY');
@@ -160,16 +162,32 @@ export class WebhookService {
     async handleStripeEvent(event: Stripe.Event) {
         const eventType = event.type;
 
-        switch (eventType) {
-            case 'payment_intent.succeeded':
-                try {
+        try {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            let invoice = null;
+            let formattedPaymentSource = '';
+            const payment = 'Engagement Setup Fee';
+
+            switch (eventType) {
+                case 'payment_intent.succeeded':
                     this.logger.log('Stripe payment intent succeeded');
 
-                    const paymentIntent = event.data.object as Stripe.PaymentIntent;
-
-                    let invoice = null;
+                    invoice = '';
                     if ('invoice' in paymentIntent && paymentIntent.invoice) {
                         invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                    }
+
+                    if (typeof paymentIntent.payment_method === 'string') {
+                        formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                    }
+
+                    if (formattedPaymentSource === "Bank Transfer") {
+                        const paymentSuccess = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                        if (paymentSuccess && paymentSuccess.zohoRecordId) {
+                            this.paymentGateway.emitPaymentSucceededToRecord(paymentSuccess.zohoRecordId, {
+                                paymentId: paymentIntent.id
+                            });
+                        }
                     }
 
                     await this.webhookRepository.storeStripePayment({
@@ -178,9 +196,9 @@ export class WebhookService {
                         paymentDate: new Date(paymentIntent.created * 1000),
                         paymentStatus: paymentIntent.status,
                         paymentId: paymentIntent.id,
-                        payment: 'Setup Fee',
+                        payment: payment,
                         amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
-                        paymentSource: 'Credit Card/Debit Card',
+                        paymentSource: formattedPaymentSource,
                         invoiceId: invoice ? invoice.id : null,
                         hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
                         createdAt: new Date(paymentIntent.created * 1000),
@@ -191,23 +209,107 @@ export class WebhookService {
                         message: 'Stripe payment_intent.succeeded event processed successfully',
                         success: true
                     };
-                } catch (error) {
-                    this.logger.error(`Error processing Stripe payment intent: ${error.message}`);
-                    if (event?.data?.object) {
-                        this.logger.debug(`PaymentIntent ID: ${(event.data.object as any).id || 'unknown'}`);
+
+                case 'payment_intent.payment_failed':
+                    this.logger.error('Stripe payment intent failed');
+                    const errorMessage = paymentIntent.last_payment_error
+                        ? paymentIntent.last_payment_error.message
+                        : 'Unknown error';
+                    const actualPaymentMethod = paymentIntent.last_payment_error?.payment_method?.type
+                        || paymentIntent.payment_method_types?.[0]
+                        || 'unknown';
+
+                    formattedPaymentSource = this.formatPaymentSource(actualPaymentMethod);
+
+                    invoice = '';
+                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
                     }
 
+                    const stripePayment = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (stripePayment && stripePayment.zohoRecordId) {
+                        this.paymentGateway.emitPaymentErrorToRecord(stripePayment.zohoRecordId, {
+                            paymentId: paymentIntent.id,
+                            error: errorMessage
+                        });
+                    }
+
+                    await this.webhookRepository.storeStripePayment({
+                        clientSecret: paymentIntent.client_secret,
+                        paymentDate: new Date(paymentIntent.created * 1000),
+                        paymentStatus: 'failed',
+                        paymentId: paymentIntent.id,
+                        payment: payment,
+                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                        paymentSource: formattedPaymentSource,
+                        invoiceId: invoice ? invoice.id : null,
+                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                        errorMessage: errorMessage,
+                        createdAt: new Date(paymentIntent.created * 1000),
+                        updatedAt: new Date()
+                    });
+
                     return {
-                        message: `Failed to process Stripe payment intent: ${error.message}`,
-                        success: false
+                        message: 'Payment intent failed event handled',
+                        success: true
                     };
-                }
+
+                case 'payment_intent.processing':
+                    this.logger.log('Stripe payment intent is processing');
+
+                    invoice = '';
+                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                    }
+
+                    if (typeof paymentIntent.payment_method === 'string') {
+                        formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                    }
+
+                    await this.webhookRepository.storeStripePayment({
+                        clientSecret: paymentIntent.client_secret,
+                        paymentDate: new Date(paymentIntent.created * 1000),
+                        paymentStatus: paymentIntent.status,
+                        paymentId: paymentIntent.id,
+                        payment: payment,
+                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                        paymentSource: formattedPaymentSource,
+                        invoiceId: invoice ? invoice.id : null,
+                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                        errorMessage: null,
+                        createdAt: new Date(paymentIntent.created * 1000),
+                        updatedAt: new Date()
+                    });
+                    break;
+
+                default:
+                    this.logger.log(`Received unhandled Stripe event type: ${eventType}`);
+                    return {
+                        message: 'Event received but not processed - event type not supported',
+                        success: true
+                    };
+            }
+        } catch (error) {
+            this.logger.error(`Error processing Stripe payment intent: ${error.message}`);
+            if (event?.data?.object) {
+                this.logger.debug(`PaymentIntent ID: ${(event.data.object as any).id || 'unknown'}`);
+            }
+
+            return {
+                message: `Failed to process Stripe payment intent: ${error.message}`,
+                success: false
+            };
+        }
+    }
+
+    private formatPaymentSource(paymentType: string): string {
+        switch (paymentType) {
+            case 'card':
+                return 'Credit Card/Debit Card';
+            case 'us_bank_account':
+                return 'Bank Transfer';
             default:
-                this.logger.log(`Received unhandled Stripe event type: ${eventType}`);
-                return {
-                    message: 'Event received but not processed - event type not supported',
-                    success: true
-                };
+                return '';
         }
     }
 }

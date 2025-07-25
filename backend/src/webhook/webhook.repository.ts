@@ -75,7 +75,7 @@ export class WebhookRepository {
             const existingPayment = await this.findStripePayment(stripePaymentData.clientSecret);
 
             if (existingPayment) {
-                this.logger.log(`Updating existing Stripe payment for zohoRecordId: ${stripePaymentData.zohoRecordId}`);
+                this.logger.log(`Updating existing Stripe payment for clientSecret: ${stripePaymentData.clientSecret}`);
                 return await this.prismaService.stripePayments.update({
                     where: {
                         clientSecret: stripePaymentData.clientSecret

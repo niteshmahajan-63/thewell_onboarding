@@ -169,9 +169,9 @@ export const downloadInvoice = async (recordId: string): Promise<DownloadInvoice
     }
 };
 
-export const checkPaymentStatus = async (paymentIntentId: string): Promise<PaymentStatusResponse> => {
+export const checkPaymentStatus = async (recordId: string): Promise<string> => {
     try {
-        const url = `/onboarding/check-payment-status?paymentIntentId=${paymentIntentId}`;
+        const url = `/onboarding/check-payment-status?recordId=${recordId}`;
         const response = await api.get<PaymentStatusResponse>(url);
 
         if (!response.data.success) {
@@ -179,7 +179,7 @@ export const checkPaymentStatus = async (paymentIntentId: string): Promise<Payme
             throw new Error(errorMessage);
         }
 
-        return response.data;
+        return response.data.data.status;
     } catch (error: any) {
         if (error.response?.data) {
             const apiError = error.response.data;

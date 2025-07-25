@@ -6,6 +6,7 @@ import { WebhookService } from './webhook.service';
 import { WebhookRepository } from './webhook.repository';
 import { PrismaService } from '../common/prisma.service';
 import { StripeService } from 'src/services/stripe.service';
+import { PaymentGateway } from './payment.gateway';
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import { StripeService } from 'src/services/stripe.service';
         WebhookService,
         WebhookRepository,
         PrismaService,
-        StripeService
+        StripeService,
+        PaymentGateway
     ],
     exports: [WebhookService],
 })

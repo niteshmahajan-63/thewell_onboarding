@@ -43,11 +43,9 @@ export const useOnboarding = (recordId: string) => {
             steps.forEach(step => {
                 if (step.isCompleted) {
                     const stepId = String(step.id);
-                    console.log(`Adding completed step to set: ${stepId}`);
                     completedStepIds.add(stepId);
                 }
             })
-            console.log('Setting completedSteps:', Array.from(completedStepIds));
             setCompletedSteps(completedStepIds)
 
         } catch (error) {

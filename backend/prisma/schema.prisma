@@ -29,6 +29,7 @@ model Client {
   stripeCustomerId           String?  @map("stripe_customer_id")
   pandadocAgreementCompleted String?  @map("pandadoc_agreement_completed")
   stripePaymentCompleted     String?  @map("stripe_payment_completed")
+  IntakeMeetingCompleted     String?  @map("intake_meeting_completed")
   amount                     String?  @map("amount")
   calendlyBookingURL         String?  @map("calendly_booking_url")
 
@@ -58,6 +59,7 @@ model StripePayments {
   paymentSource    String?   @map("payment_source")
   invoiceId        String?   @map("invoice_id")
   hostedInvoiceUrl String?   @map("hosted_invoice_url")
+  errorMessage     String?   @map("error_message")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 

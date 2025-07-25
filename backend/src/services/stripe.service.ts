@@ -87,4 +87,19 @@ export class StripeService {
             throw new Error(`Failed to check payment status: ${error.message}`);
         }
     }
+
+    async getPaymentMethod(paymentMethodId: string): Promise<string> {
+        try {
+            const paymentMethod = await this.stripe.paymentMethods.retrieve(paymentMethodId);
+            if (paymentMethod.type === 'us_bank_account') {
+                return 'Bank Transfer';
+            } else if (paymentMethod.type === 'card') {
+                return 'Credit Card/Debit Card';
+            } else {
+                return '';
+            }
+        } catch (error) {
+            throw new Error(`Failed to retrieve payment method: ${error.message}`);
+        }
+    }
 }

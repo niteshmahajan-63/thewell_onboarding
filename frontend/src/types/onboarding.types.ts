@@ -101,11 +101,5 @@ export interface PaymentStatusResponse {
     statusCode: number;
     data: {
         status: string;
-        amount: number;
-        currency: string;
     };
-}
-
-export interface PaymentStatusRequest {
-    paymentIntentId: string;
 }

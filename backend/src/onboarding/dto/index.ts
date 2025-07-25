@@ -27,5 +27,5 @@ export class CreatePaymentIntentDto {
 export class CheckPaymentStatusDto {
 	@IsString()
 	@IsNotEmpty()
-	paymentIntentId: string;
+	recordId: string;
 }

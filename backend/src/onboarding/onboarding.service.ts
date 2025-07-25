@@ -208,6 +208,10 @@ export class OnboardingService {
 				await this.updateStripePayment(recordId);
 			}
 
+			if (stepId === 3) {
+				await this.updateCalendly(recordId);
+			}
+
 			if (!updatedClientStep) {
 				throw new Error(`Step with ID ${stepId} not found for client with Zoho record ID ${recordId}`);
 			}
@@ -252,10 +256,10 @@ export class OnboardingService {
 				}
 			}
 
-			if (dbRecord.stripeRequired === 'Yes') {
+			if (dbRecord.stripeRequired === "Yes") {
 				if (dbRecord.stripePaymentCompleted !== "Yes") {
 					const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
-					if (response && response.paymentId !== null) {
+					if (response && response.paymentStatus === "succeeded") {
 						await this.updateStripePayment(recordId);
 						await this.completeStep(recordId, 2);
 					}
@@ -315,36 +319,40 @@ export class OnboardingService {
 		try {
 			const zohoRecord = await this.zohoService.getRecordById(recordId);
 			const stripeCustomerId = zohoRecord.Stripe_Customer_Id;
+			const Stripe_Payment_Completed = zohoRecord.Stripe_Payment_Completed;
 			if (!stripeCustomerId) {
 				this.logger.warn(`No Stripe Customer ID found for record ${recordId}`);
 				return;
 			}
-			const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
-			if (!response) {
-				this.logger.warn(`No payment info found for Stripe Customer ID ${stripeCustomerId}`);
+			if (Stripe_Payment_Completed === "Yes") {
+				this.logger.log(`Stripe payment already completed for record ${recordId}`);
 				return;
 			}
+			const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
+			
+			if (response && response.paymentStatus === "succeeded") {
+				let formattedPaymentDate = response.paymentDate;
+				if (response.paymentDate) {
+					let dateStr = response.paymentDate;
+					if (response.paymentDate instanceof Date) {
+						dateStr = response.paymentDate.toISOString();
+					}
+					if (typeof dateStr === 'string') {
+						formattedPaymentDate = dateStr.replace(/\.[0-9]{3}Z$/, '');
+					}
+				}
 
-			let formattedPaymentDate = response.paymentDate;
-			if (response.paymentDate) {
-				let dateStr = response.paymentDate;
-				if (response.paymentDate instanceof Date) {
-					dateStr = response.paymentDate.toISOString();
-				}
-				if (typeof dateStr === 'string') {
-					formattedPaymentDate = dateStr.replace(/\.[0-9]{3}Z$/, '');
-				}
+				const payload = {
+					Stripe_Payment_ID: response.paymentId,
+					Payment_Source: response.paymentSource,
+					Payment_Date: formattedPaymentDate,
+					Payment: '',
+					Payment_Status: response.paymentStatus,
+					Stripe_Payment_Completed: 'Yes',
+				};
+				console.log(payload);
+				await this.zohoService.updateRecord(recordId, payload);
 			}
-
-			const payload = {
-				Stripe_Payment_ID: response.paymentId,
-				Payment_Source: response.paymentSource,
-				Payment_Date: formattedPaymentDate,
-				Payment: '',
-				Payment_Status: response.paymentStatus,
-				Stripe_Payment_Completed: 'Yes',
-			};
-			await this.zohoService.updateRecord(recordId, payload);
 		} catch (error) {
 			this.logger.error(`Failed to update Stripe payment for record ${recordId}: ${error.message}`);
 			throw error;
@@ -387,18 +395,37 @@ export class OnboardingService {
 		}
 	}
 
-	async checkPaymentStatus(paymentIntentId: string): Promise<{ status: string, amount: number, currency: string }> {
-		this.logger.log(`Checking payment status for payment intent: ${paymentIntentId}`);
+	async checkPaymentStatus(recordId: string): Promise<{ status: string }> {
+		this.logger.log(`Checking payment status for recordId: ${recordId}`);
 
 		try {
-			const paymentIntent = await this.stripeService.getPaymentIntent(paymentIntentId);
-			if (!paymentIntent) {
-				throw new Error(`Payment intent with ID ${paymentIntentId} not found`);
+			const paymentRecord = await this.onboardingRepository.getStripePaymentRecord(recordId);
+			
+			if (!paymentRecord) {
+				throw new Error(`Payment intent with ID ${recordId} not found`);
 			}
 
-			return paymentIntent;
+			return {
+				status: paymentRecord.paymentStatus
+			};
 		} catch (error) {
-			this.logger.error(`Failed to check payment status for payment intent ${paymentIntentId}: ${error.message}`);
+			this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+	async updateCalendly(recordId: string): Promise<void> {
+		this.logger.log(`Updating Calendly booking for record: ${recordId}`);
+
+		try {
+			const payload = {
+				Intake_Meeting_Completed: "Yes"
+			}
+
+			await this.zohoService.updateRecord(recordId, payload);
+			this.logger.log(`Calendly booking updated successfully for record ${recordId}`);
+		} catch (error) {
+			this.logger.error(`Failed to update Calendly booking for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

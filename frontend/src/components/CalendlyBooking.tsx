@@ -28,19 +28,7 @@ const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ handleStepComplete, r
 
     if (isBookingComplete) {
         return (
-            <div className="text-center py-8 sm:py-16 px-4 sm:px-0">
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 sm:p-12 max-w-md mx-auto">
-                    <div className="flex items-center justify-center mb-4">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                    </div>
-                    <p className="text-base sm:text-lg font-semibold text-green-800">Meeting Booked Successfully!</p>
-                    <p className="text-xs sm:text-sm text-green-600 mt-2">Your intake session has been scheduled.</p>
-                </div>
-            </div>
+            <></>
         )
     }
 

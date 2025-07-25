@@ -49,10 +49,7 @@ const OnboardingContent: React.FC = () => {
 
 	if (steps.length === 0) {
 		return (
-			<div className="bg-green-900 border border-green-700 rounded-lg p-8 text-center">
-				<h2 className="text-green-300 text-xl font-semibold mb-2">All Set!</h2>
-				<p className="text-green-400">No additional onboarding steps are required for your account.</p>
-			</div>
+			<></>
 		)
 	}
 

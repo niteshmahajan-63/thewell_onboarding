@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { io, Socket } from 'socket.io-client';
 import { Button } from './ui/button'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
 import { checkPaymentStatus, createPaymentIntent, downloadInvoice } from '../services/onboardingService'
@@ -14,13 +15,13 @@ import { loadStripe } from '@stripe/stripe-js'
 import type { Appearance as StripeAppearance, StripeElementsOptions } from '@stripe/stripe-js'
 import { env } from '../config/env'
 
-const PAYMENT_STATUS_KEY = 'payment_status';
-const PAYMENT_INTENT_ID_KEY = 'payment_intent_id';
-const PAYMENT_MESSAGE_KEY = 'payment_message';
-const PAYMENT_START_TIME_KEY = 'payment_start_time';
-
 interface StripeCheckoutProps {
     handleStepComplete: (completed: boolean) => void;
+}
+
+interface CheckoutFormProps {
+    handleStepComplete: (completed: boolean) => void;
+    recordId: string;
 }
 
 interface Appearance extends StripeAppearance {
@@ -32,26 +33,93 @@ interface Appearance extends StripeAppearance {
 
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordId }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [socketConnected, setSocketConnected] = useState(false);
     const stripe = useStripe();
     const elements = useElements();
+    const socketRef = useRef<Socket | null>(null);
 
-    // Check for stored payment status on mount
     useEffect(() => {
-        const savedStatus = localStorage.getItem(PAYMENT_STATUS_KEY);
-        const savedPaymentIntentId = localStorage.getItem(PAYMENT_INTENT_ID_KEY);
-        const savedMessage = localStorage.getItem(PAYMENT_MESSAGE_KEY);
-        const savedStartTime = localStorage.getItem(PAYMENT_START_TIME_KEY);
-        
-        if (savedStatus === 'processing' && savedPaymentIntentId) {
-            setPaymentStatus('processing');
-            setMessage(savedMessage || 'Checking payment status...');
-            startStatusMonitoring(savedPaymentIntentId, savedStartTime ? parseInt(savedStartTime) : undefined);
+        console.info(socketConnected);
+
+        if (recordId) {
+            const fetchPaymentStatus = async () => {
+                try {
+                    const status = await checkPaymentStatus(recordId);
+
+                    if (status == 'processing') {
+                        setPaymentStatus('processing');
+                        setMessage('Processing your payment – please don’t refresh or close this window.');
+                        setShowStatusModal(true);
+                    }
+                } catch (err) {
+                    console.error('Stripe payment intent error:', err);
+                }
+            };
+
+            fetchPaymentStatus();
         }
-    }, []);
+
+        if (recordId && !socketRef.current) {
+            const socket = io(`${env.SOCKET_URL}`, {
+                transports: ['websocket'],
+                forceNew: true,
+                timeout: 20000,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
+
+            socketRef.current = socket;
+
+            socket.on('connect', () => {
+                setSocketConnected(true);
+                socket.emit('join', { recordID: recordId });
+            });
+
+            socket.on('payment_failed', (data: { paymentId: string; error: string }) => {
+                setMessage(data.error);
+                setPaymentStatus('failed');
+                setShowStatusModal(true);
+            });
+
+            socket.on('payment_succeeded', (data: { paymentId: string }) => {
+                console.info('Payment succeeded:', data);
+                setMessage('Payment successful!');
+                setPaymentStatus('succeeded');
+                setShowStatusModal(false);
+                if (handleStepComplete) {
+                    handleStepComplete(true);
+                }
+                setIsLoading(false);
+            });
+
+            socket.on('connect_error', () => {
+                setSocketConnected(false);
+            });
+
+            socket.on('disconnect', () => {
+                setSocketConnected(false);
+            });
+
+            socket.on('reconnect', () => {
+                setSocketConnected(true);
+                socket.emit('join', { recordID: recordId });
+            });
+        }
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+                setSocketConnected(false);
+            }
+        };
+    }, [recordId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,6 +130,7 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
 
         setIsLoading(true);
         setMessage(null);
+        setShowStatusModal(false);
 
         const { error, paymentIntent } = await stripe.confirmPayment({
             elements,
@@ -74,6 +143,8 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
         if (error) {
             setMessage(error.message || 'An unexpected error occurred.');
             setIsLoading(false);
+            setShowStatusModal(true);
+            setPaymentStatus('failed');
             return;
         }
 
@@ -82,9 +153,7 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
                 case 'succeeded':
                     setMessage('Payment successful!');
                     setPaymentStatus('succeeded');
-                    localStorage.removeItem(PAYMENT_STATUS_KEY);
-                    localStorage.removeItem(PAYMENT_INTENT_ID_KEY);
-                    localStorage.removeItem(PAYMENT_MESSAGE_KEY);
+                    setShowStatusModal(true);
                     if (handleStepComplete) {
                         handleStepComplete(true);
                     }
@@ -95,99 +164,23 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
                     const processingMessage = `Processing your payment – please don’t refresh or close this window.`;
                     setMessage(processingMessage);
                     setPaymentStatus('processing');
-                    const startTime = Date.now();
-                    localStorage.setItem(PAYMENT_STATUS_KEY, 'processing');
-                    localStorage.setItem(PAYMENT_INTENT_ID_KEY, paymentIntent.id);
-                    localStorage.setItem(PAYMENT_MESSAGE_KEY, processingMessage);
-                    localStorage.setItem(PAYMENT_START_TIME_KEY, startTime.toString());
+                    setShowStatusModal(true);
                     setIsLoading(false);
-                    startStatusMonitoring(paymentIntent.id, startTime);
                     break;
 
                 default:
                     setMessage(`Payment status: ${paymentIntent.status}`);
+                    setShowStatusModal(true);
                     setIsLoading(false);
                     break;
             }
         }
     };
 
-    const startStatusMonitoring = (paymentIntentId: string, startTime?: number) => {
-        let isProcessingStopped = false;
-        const processStartTime = startTime || Date.now();
-
-        const checkStatus = async () => {
-            try {
-                const response = await checkPaymentStatus(paymentIntentId);
-
-                if (response.data.status === 'succeeded') {
-                    const successMessage = 'Payment successful!';
-                    setMessage(successMessage);
-                    setPaymentStatus('succeeded');
-                    localStorage.removeItem(PAYMENT_STATUS_KEY);
-                    localStorage.removeItem(PAYMENT_INTENT_ID_KEY);
-                    localStorage.removeItem(PAYMENT_MESSAGE_KEY);
-                    isProcessingStopped = true;
-
-                    setTimeout(() => {
-                        if (handleStepComplete) {
-                            handleStepComplete(true);
-                        }
-                    }, 2000);
-
-                    return true;
-                } else if (response.data.status === 'failed') {
-                    const failureMessage = `Sorry, we couldn’t confirm your payment. Please contact The Well Recruiting Services to verify.`;
-                    setMessage(failureMessage);
-                    setPaymentStatus('failed');
-                    localStorage.removeItem(PAYMENT_STATUS_KEY);
-                    localStorage.removeItem(PAYMENT_INTENT_ID_KEY);
-                    localStorage.removeItem(PAYMENT_MESSAGE_KEY);
-                    isProcessingStopped = true;
-                    setTimeout(() => {
-                        setPaymentStatus('idle');
-                        setMessage(null);
-                    }, 3000);
-                    return true;
-                }
-
-                return false;
-            } catch (error) {
-                console.error('Status check error:', error);
-                return false;
-            }
-        };
-
-        checkStatus().then(shouldStop => {
-            if (shouldStop) return;
-
-            const interval = setInterval(async () => {
-                const shouldStop = await checkStatus();
-                if (shouldStop) {
-                    clearInterval(interval);
-                }
-            }, 20000);
-
-            const timeoutDuration = 1 * 60 * 1000; // 1 minute
-            const remainingTime = Math.max(0, timeoutDuration - (Date.now() - processStartTime));
-            
-            setTimeout(() => {
-                if (!isProcessingStopped) {
-                    clearInterval(interval);
-                    const timeoutMessage = `Sorry, we couldn’t confirm your payment. Please contact The Well Recruiting Services to verify.`;
-                    setMessage(timeoutMessage);
-                    setPaymentStatus('failed');
-                    localStorage.removeItem(PAYMENT_STATUS_KEY);
-                    localStorage.removeItem(PAYMENT_INTENT_ID_KEY);
-                    localStorage.removeItem(PAYMENT_MESSAGE_KEY);
-                    localStorage.removeItem(PAYMENT_START_TIME_KEY);
-                    setTimeout(() => {
-                        setPaymentStatus('idle');
-                        setMessage(null);
-                    }, 3000);
-                }
-            }, remainingTime);
-        });
+    const handleCloseModal = () => {
+        setShowStatusModal(false);
+        setPaymentStatus('idle');
+        setMessage(null);
     };
 
     return (
@@ -202,16 +195,17 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
                                 radios: false,
                                 spacedAccordionItems: false
                             },
-                            paymentMethodOrder: ['card','us_bank_account'],
+                            paymentMethodOrder: ['card', 'us_bank_account'],
                         }}
                     />
                 </div>
             </div>
 
-            {paymentStatus !== 'idle' && message && (
+            {showStatusModal && paymentStatus !== 'idle' && message && (
                 <PaymentStatusModal
                     status={paymentStatus}
                     message={message}
+                    onClose={paymentStatus === 'failed' ? handleCloseModal : undefined}
                 />
             )}
 
@@ -220,8 +214,8 @@ const CheckoutForm: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => 
                     type="submit"
                     disabled={isLoading || !stripe || !elements || paymentStatus === 'processing'}
                     className={`px-6 py-3 w-full rounded-md font-medium transition-all duration-200 ${isLoading || !stripe || !elements || paymentStatus === 'processing'
-                            ? 'opacity-70 cursor-not-allowed'
-                            : 'transform hover:-translate-y-0.5 hover:shadow-lg'
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'transform hover:-translate-y-0.5 hover:shadow-lg'
                         }`}
                     style={{
                         backgroundColor: (isLoading || !stripe || !elements || paymentStatus === 'processing') ? '#D4BC76' : '#BE9E44',
@@ -441,6 +435,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                             <Elements stripe={stripePromise} options={options}>
                                 <CheckoutForm
                                     handleStepComplete={handleStepComplete}
+                                    recordId={recordId}
                                 />
                             </Elements>
                         </div>

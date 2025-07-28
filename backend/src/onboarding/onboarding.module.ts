@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { ConfigModule } from '@nestjs/config';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OnboardingController } from './onboarding.controller';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingRepository } from './onboarding.repository';
@@ -16,7 +16,22 @@ import { ZohoService } from '../services/zoho.service';
         ConfigModule.forFeature(zohoConfig),
     ],
     controllers: [OnboardingController],
-    providers: [OnboardingService, OnboardingRepository, ZohoService, PrismaService, StripeService, PandaDocService],
-    exports: [OnboardingService],
+    providers: [
+        OnboardingService,
+        OnboardingRepository,
+        PrismaService,
+        StripeService,
+        PandaDocService,
+        {
+            provide: ZohoService,
+            useFactory: (
+                configService: ConfigService,
+                httpService: HttpService,
+            ) => {
+                return new ZohoService('onboarding', configService, httpService);
+            },
+        },
+    ],
+    exports: [OnboardingService, ZohoService],
 })
 export class OnboardingModule { }

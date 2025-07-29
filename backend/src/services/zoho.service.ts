@@ -12,7 +12,6 @@ export class ZohoService {
 	private tokenExpiryTime: number = 0;
 
 	constructor(
-		private readonly module: string,
 		private readonly configService: ConfigService,
 		private readonly httpService: HttpService,
 	) { }

@@ -167,120 +167,130 @@ export class WebhookService {
             let invoice = null;
             let formattedPaymentSource = '';
             const payment = 'Engagement Setup Fee';
+            let recordExist = null;
 
             switch (eventType) {
                 case 'payment_intent.succeeded':
                     this.logger.log('Stripe payment intent succeeded');
 
-                    invoice = '';
-                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
-                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
-                    }
-
-                    if (typeof paymentIntent.payment_method === 'string') {
-                        formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
-                    }
-
-                    if (formattedPaymentSource === "Bank Transfer") {
-                        const paymentSuccess = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
-                        if (paymentSuccess && paymentSuccess.zohoRecordId) {
-                            this.paymentGateway.emitPaymentSucceededToRecord(paymentSuccess.zohoRecordId, {
-                                paymentId: paymentIntent.id
-                            });
+                    recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (recordExist) {
+                        invoice = '';
+                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
                         }
+
+                        if (typeof paymentIntent.payment_method === 'string') {
+                            formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                        }
+
+                        if (formattedPaymentSource === "Bank Transfer") {
+                            const paymentSuccess = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                            if (paymentSuccess && paymentSuccess.zohoRecordId) {
+                                this.paymentGateway.emitPaymentSucceededToRecord(paymentSuccess.zohoRecordId, {
+                                    paymentId: paymentIntent.id
+                                });
+                            }
+                        }
+
+                        await this.webhookRepository.storeStripePayment({
+                            clientSecret: paymentIntent.client_secret,
+                            customerId: paymentIntent.customer,
+                            paymentDate: new Date(paymentIntent.created * 1000),
+                            paymentStatus: paymentIntent.status,
+                            paymentId: paymentIntent.id,
+                            payment: payment,
+                            amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                            paymentSource: formattedPaymentSource,
+                            invoiceId: invoice ? invoice.id : null,
+                            hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                            createdAt: new Date(paymentIntent.created * 1000),
+                            updatedAt: new Date()
+                        });
+
+                        return {
+                            message: 'Stripe payment_intent.succeeded event processed successfully',
+                            success: true
+                        };
                     }
-
-                    await this.webhookRepository.storeStripePayment({
-                        clientSecret: paymentIntent.client_secret,
-                        customerId: paymentIntent.customer,
-                        paymentDate: new Date(paymentIntent.created * 1000),
-                        paymentStatus: paymentIntent.status,
-                        paymentId: paymentIntent.id,
-                        payment: payment,
-                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
-                        paymentSource: formattedPaymentSource,
-                        invoiceId: invoice ? invoice.id : null,
-                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
-                        createdAt: new Date(paymentIntent.created * 1000),
-                        updatedAt: new Date()
-                    });
-
-                    return {
-                        message: 'Stripe payment_intent.succeeded event processed successfully',
-                        success: true
-                    };
 
                 case 'payment_intent.payment_failed':
                     this.logger.error('Stripe payment intent failed');
-                    const errorMessage = paymentIntent.last_payment_error
-                        ? paymentIntent.last_payment_error.message
-                        : 'Unknown error';
-                    const actualPaymentMethod = paymentIntent.last_payment_error?.payment_method?.type
-                        || paymentIntent.payment_method_types?.[0]
-                        || 'unknown';
 
-                    formattedPaymentSource = this.formatPaymentSource(actualPaymentMethod);
+                    recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (recordExist) {
+                        const errorMessage = paymentIntent.last_payment_error
+                            ? paymentIntent.last_payment_error.message
+                            : 'Unknown error';
+                        const actualPaymentMethod = paymentIntent.last_payment_error?.payment_method?.type
+                            || paymentIntent.payment_method_types?.[0]
+                            || 'unknown';
 
-                    invoice = '';
-                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
-                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
-                    }
+                        formattedPaymentSource = this.formatPaymentSource(actualPaymentMethod);
 
-                    const stripePayment = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
-                    if (stripePayment && stripePayment.zohoRecordId) {
-                        this.paymentGateway.emitPaymentErrorToRecord(stripePayment.zohoRecordId, {
+                        invoice = '';
+                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                        }
+
+                        const stripePayment = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                        if (stripePayment && stripePayment.zohoRecordId) {
+                            this.paymentGateway.emitPaymentErrorToRecord(stripePayment.zohoRecordId, {
+                                paymentId: paymentIntent.id,
+                                error: errorMessage
+                            });
+                        }
+
+                        await this.webhookRepository.storeStripePayment({
+                            clientSecret: paymentIntent.client_secret,
+                            paymentDate: new Date(paymentIntent.created * 1000),
+                            paymentStatus: 'failed',
                             paymentId: paymentIntent.id,
-                            error: errorMessage
+                            payment: payment,
+                            amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                            paymentSource: formattedPaymentSource,
+                            invoiceId: invoice ? invoice.id : null,
+                            hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                            errorMessage: errorMessage,
+                            createdAt: new Date(paymentIntent.created * 1000),
+                            updatedAt: new Date()
                         });
+
+                        return {
+                            message: 'Payment intent failed event handled',
+                            success: true
+                        };
                     }
-
-                    await this.webhookRepository.storeStripePayment({
-                        clientSecret: paymentIntent.client_secret,
-                        paymentDate: new Date(paymentIntent.created * 1000),
-                        paymentStatus: 'failed',
-                        paymentId: paymentIntent.id,
-                        payment: payment,
-                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
-                        paymentSource: formattedPaymentSource,
-                        invoiceId: invoice ? invoice.id : null,
-                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
-                        errorMessage: errorMessage,
-                        createdAt: new Date(paymentIntent.created * 1000),
-                        updatedAt: new Date()
-                    });
-
-                    return {
-                        message: 'Payment intent failed event handled',
-                        success: true
-                    };
 
                 case 'payment_intent.processing':
                     this.logger.log('Stripe payment intent is processing');
 
-                    invoice = '';
-                    if ('invoice' in paymentIntent && paymentIntent.invoice) {
-                        invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
-                    }
+                    recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (recordExist) {
+                        invoice = '';
+                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                        }
 
-                    if (typeof paymentIntent.payment_method === 'string') {
-                        formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
-                    }
+                        if (typeof paymentIntent.payment_method === 'string') {
+                            formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                        }
 
-                    await this.webhookRepository.storeStripePayment({
-                        clientSecret: paymentIntent.client_secret,
-                        paymentDate: new Date(paymentIntent.created * 1000),
-                        paymentStatus: paymentIntent.status,
-                        paymentId: paymentIntent.id,
-                        payment: payment,
-                        amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
-                        paymentSource: formattedPaymentSource,
-                        invoiceId: invoice ? invoice.id : null,
-                        hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
-                        errorMessage: null,
-                        createdAt: new Date(paymentIntent.created * 1000),
-                        updatedAt: new Date()
-                    });
-                    break;
+                        await this.webhookRepository.storeStripePayment({
+                            clientSecret: paymentIntent.client_secret,
+                            paymentDate: new Date(paymentIntent.created * 1000),
+                            paymentStatus: paymentIntent.status,
+                            paymentId: paymentIntent.id,
+                            payment: payment,
+                            amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                            paymentSource: formattedPaymentSource,
+                            invoiceId: invoice ? invoice.id : null,
+                            hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                            errorMessage: null,
+                            createdAt: new Date(paymentIntent.created * 1000),
+                            updatedAt: new Date()
+                        });
+                    }
 
                 default:
                     this.logger.log(`Received unhandled Stripe event type: ${eventType}`);

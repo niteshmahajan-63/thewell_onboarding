@@ -40,6 +40,7 @@ export interface OnboardingRecord {
         url: string;
         value: string;
     };
+    Customer_Email: string;
 }
 
 export interface CheckoutSessionRequest {

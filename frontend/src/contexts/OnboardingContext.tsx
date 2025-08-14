@@ -12,6 +12,7 @@ interface OnboardingContextType {
   pandaDocSessionId: string | null
   companyName: string | null
   amount: number | null
+  email: string | null
   calendlyBookingURL: string | null
   isLoading: boolean
   error: string | null

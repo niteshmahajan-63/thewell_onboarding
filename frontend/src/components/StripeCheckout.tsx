@@ -22,6 +22,7 @@ interface StripeCheckoutProps {
 interface CheckoutFormProps {
     handleStepComplete: (completed: boolean) => void;
     recordId: string;
+    email: string;
 }
 
 interface Appearance extends StripeAppearance {
@@ -33,7 +34,7 @@ interface Appearance extends StripeAppearance {
 
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordId }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordId, email }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
@@ -136,6 +137,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
             elements,
             confirmParams: {
                 return_url: window.location.href,
+                payment_method_data: {
+                    billing_details: {
+                        email: email,
+                    }
+                }
             },
             redirect: 'if_required',
         });
@@ -195,6 +201,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
                                 radios: false,
                                 spacedAccordionItems: false
                             },
+                            fields: {
+                                billingDetails: {
+                                    email: 'never'
+                                }
+                            },
                             paymentMethodOrder: ['card', 'us_bank_account'],
                         }}
                     />
@@ -250,7 +261,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
 const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { recordId, companyName, amount } = useOnboardingContext();
+    const { recordId, companyName, amount, email } = useOnboardingContext();
 
     useEffect(() => {
         if (recordId) {
@@ -436,6 +447,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                                 <CheckoutForm
                                     handleStepComplete={handleStepComplete}
                                     recordId={recordId}
+                                    email={email || ''}
                                 />
                             </Elements>
                         </div>

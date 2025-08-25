@@ -41,6 +41,7 @@ export interface OnboardingRecord {
         value: string;
     };
     Customer_Email: string;
+    Deactivated_Link: string;
 }
 
 export interface CheckoutSessionRequest {

@@ -4,6 +4,7 @@ import type { OnboardingStep, OnboardingRecord } from '../types/onboarding.types
 
 export const useOnboarding = (recordId: string) => {
     const [currentStep, setCurrentStep] = useState(1)
+    const [deactivatedLink, setDeactivatedLink] = useState<string | null>(null)
     const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
     const [pandaDocSessionId, setPandaDocSessionId] = useState<string | null>(null)
     const [companyName, setCompanyName] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export const useOnboarding = (recordId: string) => {
             setEmail(record.Customer_Email || null)
 
             setOnboardingConfig(record)
+            setDeactivatedLink(record.Deactivated_Link)
             setSteps(steps)
             setPandaDocSessionId(pandadoc_session_id)
             setCompanyName(record.Company_Name || null)
@@ -69,6 +71,7 @@ export const useOnboarding = (recordId: string) => {
         completedSteps,
         setCompletedSteps,
         pandaDocSessionId,
+        deactivatedLink,
         companyName,
         amount,
         email,

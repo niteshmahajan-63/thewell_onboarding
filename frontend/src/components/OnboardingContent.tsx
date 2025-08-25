@@ -4,6 +4,7 @@ import OnboardingHeader from './OnboardingHeader'
 // import DemoStepSelector from './DemoStepSelector'
 import StepIndicator from './StepIndicator'
 import OnboardingForm from './OnboardingForm'
+import Expired from './Expired'
 
 const OnboardingContent: React.FC = () => {
 	const {
@@ -16,7 +17,8 @@ const OnboardingContent: React.FC = () => {
 		error,
 		onboardingConfig,
 		steps,
-		recordId
+		recordId,
+		deactivatedLink,
 	} = useOnboardingContext()
 
 	if (isLoading) {
@@ -47,9 +49,9 @@ const OnboardingContent: React.FC = () => {
 		)
 	}
 
-	if (steps.length === 0) {
+	if (deactivatedLink === "true") {
 		return (
-			<></>
+			<Expired />
 		)
 	}
 
@@ -64,10 +66,10 @@ const OnboardingContent: React.FC = () => {
 					setCurrentStep={setCurrentStep}
 				/>
 			)} */}
-			<StepIndicator 
-				steps={steps} 
-				currentStep={currentStep} 
-				completedSteps={completedSteps} 
+			<StepIndicator
+				steps={steps}
+				currentStep={currentStep}
+				completedSteps={completedSteps}
 			/>
 			<OnboardingForm
 				currentStep={currentStep}

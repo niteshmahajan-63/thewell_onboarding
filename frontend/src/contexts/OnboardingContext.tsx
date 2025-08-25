@@ -10,6 +10,7 @@ interface OnboardingContextType {
   completedSteps: Set<string>
   setCompletedSteps: (steps: Set<string> | ((prev: Set<string>) => Set<string>)) => void
   pandaDocSessionId: string | null
+  deactivatedLink: string | null
   companyName: string | null
   amount: number | null
   email: string | null

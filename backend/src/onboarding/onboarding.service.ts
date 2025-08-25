@@ -48,7 +48,8 @@ export class OnboardingService {
 			stripePaymentCompleted: zohoRecord.Stripe_Payment_Completed || null,
 			amount: zohoRecord.Amount || null,
 			calendlyBookingURL: zohoRecord.Calendly_Booking_URL.value || null,
-			// customerEmail: zohoRecord.Customer_Email || null,
+			customerEmail: zohoRecord.Customer_Email || null,
+			deactivatedLink: zohoRecord.Deactivated_Link || null,
 		};
 
 		try {
@@ -235,9 +236,7 @@ export class OnboardingService {
 		this.logger.log(`Fetching record data and steps for record: ${recordId}`);
 
 		try {
-			const zohoRecord = await this.zohoService.getRecordById(recordId);
 			const record = await this.getRecordById(recordId);
-			record.Customer_Email = zohoRecord.Customer_Email || null;
 
 			let pandadoc_session_id = null;
 			if (record.Agreement_Required === 'Yes') {

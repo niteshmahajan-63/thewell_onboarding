@@ -33,6 +33,7 @@ model Client {
   amount                     String?  @map("amount")
   calendlyBookingURL         String?  @map("calendly_booking_url")
   customerEmail              String?  @map("customer_email")
+  deactivatedLink            String?  @map("deactivated_link")
 
   @@map("clients")
 }

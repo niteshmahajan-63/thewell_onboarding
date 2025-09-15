@@ -9,7 +9,7 @@ interface PandaDocSigningProps {
 }
 
 const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete }) => {
-	const { pandaDocSessionId } = useOnboardingContext()
+	const { pandaDocSessionId, pandaDocMode, customPandadocUrl } = useOnboardingContext()
 	const [error, setError] = useState<string | null>(null)
 	const [showEmbedded, setShowEmbedded] = useState<boolean>(false)
 	const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -47,7 +47,6 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 		}
 	}, [handleStepComplete])
 
-	// If there's an error, display it
 	if (error) {
 		return (
 			<Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200 mb-4 mx-4 sm:mx-0">
@@ -64,16 +63,30 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 		)
 	}
 
-	// Handle button click to load document
 	const handleStartSigning = () => {
 		setIsLoading(true)
 		setError(null)
 		setShowEmbedded(true)
+		if (pandaDocMode === "custom" && customPandadocUrl) {
+			setIsLoading(false)
+			window.open(customPandadocUrl, "_blank");
+		}
 	}
 
-	// Handle iframe loading completion as a backup
 	const handleIframeLoad = () => {
 		setIsLoading(false)
+	}
+
+	const handleCancel = () => {
+		setError(null)
+		setShowEmbedded(false)
+	}
+
+	const handleSigned = () => {
+		setIsLoading(false)
+		if (handleStepComplete) {
+			handleStepComplete(true)
+		}
 	}
 
 	return (
@@ -116,7 +129,7 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 				</div>
 			)}
 
-			{showEmbedded && (
+			{showEmbedded && pandaDocMode === "regular" && (
 				<Card className="bg-white border-gray-200 shadow-lg w-full mt-0">
 					<CardContent className="p-0">
 						<iframe
@@ -131,6 +144,29 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 						/>
 					</CardContent>
 				</Card>
+			)}
+
+			{showEmbedded && pandaDocMode === "custom" && (
+				<div className="flex flex-col items-center space-y-4 p-4 bg-white rounded-2xl">
+					<p className="text-base sm:text-lg font-medium text-gray-800 text-center">
+						Have you completed signing the Agreement?
+					</p>
+					<div className="flex space-x-4">
+						<Button
+							onClick={handleSigned}
+							className="bg-green-600 hover:bg-green-700 text-white px-6"
+						>
+							Yes, I have Signed
+						</Button>
+						<Button
+							onClick={handleCancel}
+							variant="outline"
+							className="px-6"
+						>
+							Cancel
+						</Button>
+					</div>
+				</div>
 			)}
 		</div>
 	)

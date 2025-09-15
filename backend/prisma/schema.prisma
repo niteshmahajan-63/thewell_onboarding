@@ -34,6 +34,7 @@ model Client {
   calendlyBookingURL         String?  @map("calendly_booking_url")
   customerEmail              String?  @map("customer_email")
   deactivatedLink            String?  @map("deactivated_link")
+  customPandadocURL          String?  @map("custom_pandadoc_url")
 
   @@map("clients")
 }

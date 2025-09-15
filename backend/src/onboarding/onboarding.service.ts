@@ -50,6 +50,7 @@ export class OnboardingService {
 			calendlyBookingURL: zohoRecord.Calendly_Booking_URL.value || null,
 			customerEmail: zohoRecord.Customer_Email || null,
 			deactivatedLink: zohoRecord.Deactivated_Link || null,
+			customPandadocURL: zohoRecord.Custom_Pandadoc_URL.value || null,
 		};
 
 		try {
@@ -239,7 +240,7 @@ export class OnboardingService {
 			const record = await this.getRecordById(recordId);
 
 			let pandadoc_session_id = null;
-			if (record.Agreement_Required === 'Yes') {
+			if ((record.Agreement_Required === 'Yes') && (record.PandaDoc_ID)) {
 				pandadoc_session_id = await this.pandaDocService.getSigningLink(record.PandaDoc_ID);
 			}
 
@@ -247,8 +248,8 @@ export class OnboardingService {
 			if (!dbRecord) {
 				throw new Error(`Record with ID ${recordId} not found in the database`);
 			}
-
-			if (dbRecord.agreementRequired === 'Yes') {
+			
+			if ((dbRecord.agreementRequired === 'Yes') && (dbRecord.pandaDocId)) {
 				if (dbRecord.pandadocAgreementCompleted !== "Yes") {
 					const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
 					if (response) {

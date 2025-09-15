@@ -7,6 +7,8 @@ export const useOnboarding = (recordId: string) => {
     const [deactivatedLink, setDeactivatedLink] = useState<string | null>(null)
     const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
     const [pandaDocSessionId, setPandaDocSessionId] = useState<string | null>(null)
+    const [pandaDocMode, setPandaDocMode] = useState<string | null>(null)
+    const [customPandadocUrl, setcustomPandadocUrl] = useState<string | null>(null)
     const [companyName, setCompanyName] = useState<string | null>(null)
     const [amount, setAmount] = useState<number | null>(null)
     const [email, setEmail] = useState<string | null>(null)
@@ -32,10 +34,17 @@ export const useOnboarding = (recordId: string) => {
             setOnboardingConfig(record)
             setDeactivatedLink(record.Deactivated_Link)
             setSteps(steps)
-            setPandaDocSessionId(pandadoc_session_id)
             setCompanyName(record.Company_Name || null)
             setAmount(record.Amount || null)
             setCalendlyBookingURL(record.Calendly_Booking_URL.value)
+
+            if(record.Agreement_Required === 'Yes' && record.PandaDoc_ID) {
+                setPandaDocMode("regular");
+                setPandaDocSessionId(pandadoc_session_id)
+            } else if (record.Agreement_Required === 'Yes' && !record.PandaDoc_ID) {
+                setPandaDocMode("custom");
+                setcustomPandadocUrl(record.Custom_Pandadoc_URL.value);
+            }
 
             if (record.Agreement_Required === "No" && record.Stripe_Required === "No") {
                 setCurrentStep(3);
@@ -71,6 +80,8 @@ export const useOnboarding = (recordId: string) => {
         completedSteps,
         setCompletedSteps,
         pandaDocSessionId,
+        pandaDocMode,
+        customPandadocUrl,
         deactivatedLink,
         companyName,
         amount,

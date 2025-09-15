@@ -42,6 +42,10 @@ export interface OnboardingRecord {
     };
     Customer_Email: string;
     Deactivated_Link: string;
+    Custom_Pandadoc_URL: {
+        url: string;
+        value: string;
+    }
 }
 
 export interface CheckoutSessionRequest {

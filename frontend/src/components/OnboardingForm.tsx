@@ -16,7 +16,7 @@ interface OnboardingFormProps {
     currentStep: number;
     steps: Step[];
     setCurrentStep: (step: number) => void;
-    pandaDocSessionId: string | null;
+    pandaDocMode: string | null;
     recordId: string;
     completedSteps: Set<string>;
     setCompletedSteps: (steps: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
@@ -26,7 +26,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     currentStep,
     steps,
     setCurrentStep,
-    pandaDocSessionId,
+    pandaDocMode,
     recordId,
     completedSteps,
     setCompletedSteps
@@ -163,13 +163,13 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                 <CardContent className={`p-6 ${currentStepObject.type === 'meeting' ? 'min-h-[850px]' : 'min-h-[400px]'} flex items-center justify-center bg-white w-full`}>
 
                     {/* Agreement Step */}
-                    {currentStepObject.type === 'agreement' && !stepCompleting && pandaDocSessionId && (
+                    {currentStepObject.type === 'agreement' && !stepCompleting && pandaDocMode && (
                         <PandaDocSigning
                             handleStepComplete={handleStepComplete}
                         />
                     )}
 
-                    {currentStepObject.type === 'agreement' && !stepCompleting && !pandaDocSessionId && (
+                    {currentStepObject.type === 'agreement' && !stepCompleting && !pandaDocMode && (
                         <div className="text-center py-16">
                             <div className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-xl p-12 max-w-md mx-auto">
                                 <p className="text-lg text-gray-300">Loading document...</p>

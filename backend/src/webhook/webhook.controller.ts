@@ -77,7 +77,7 @@ export class WebhookController {
 
         if (result === false) {
             this.logger.warn('Invalid Stripe webhook signature');
-            throw new HttpException('Invalid webhook signature - verification failed', HttpStatus.UNAUTHORIZED);
+            return { received: true };
         }
 
         try {

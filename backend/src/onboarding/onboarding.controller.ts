@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Logger, Post, Body } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import { ApiResponse, createSuccessResponse } from '../common/utils';
-import { GetRecordByIdDto, CompleteStepDto, CreatePaymentIntentDto, CheckPaymentStatusDto } from './dto';
+import { GetRecordByIdDto, CompleteStepDto, CreatePaymentIntentDto, CheckPaymentStatusDto, SendSlackMessageDto } from './dto';
 
 @Controller('api/onboarding')
 export class OnboardingController {
@@ -118,6 +118,21 @@ export class OnboardingController {
 			return createSuccessResponse(response, 'Payment status checked successfully');
 		} catch (error) {
 			this.logger.error(`Failed to check payment status for recordId ${recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Post('send-slack-message')
+	async sendSlackMessage(
+		@Body() slackMessageDto: SendSlackMessageDto,
+	): Promise<ApiResponse<null>> {
+		this.logger.log(`Processing Slack message request`);
+
+		try {
+			await this.onboardingService.sendSlackMessage(slackMessageDto);
+			return createSuccessResponse(null, 'Slack message sent successfully');
+		} catch (error) {
+			this.logger.error(`Failed to send Slack message:`, error.message);
 			throw error;
 		}
 	}

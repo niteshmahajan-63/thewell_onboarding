@@ -9,6 +9,7 @@ import { PrismaService } from '../common/prisma.service';
 import { StripeService } from '../services/stripe.service';
 import { PandaDocService } from '../services/panda-doc.service';
 import { ZohoService } from '../services/zoho.service';
+import { SlackService } from 'src/common/slack.service';
 
 @Module({
     imports: [
@@ -22,7 +23,8 @@ import { ZohoService } from '../services/zoho.service';
         PrismaService,
         StripeService,
         PandaDocService,
-        ZohoService
+        ZohoService,
+        SlackService
     ],
     exports: [OnboardingService],
 })

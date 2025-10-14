@@ -7,6 +7,10 @@ import { WebhookRepository } from './webhook.repository';
 import { PrismaService } from '../common/prisma.service';
 import { StripeService } from 'src/services/stripe.service';
 import { PaymentGateway } from './payment.gateway';
+import { ZohoUpdateService } from 'src/services/zoho-update.service';
+import { ZohoService } from 'src/services/zoho.service';
+import { PandaDocService } from 'src/services/panda-doc.service';
+import { OnboardingRepository } from 'src/onboarding/onboarding.repository';
 
 @Module({
     imports: [
@@ -19,7 +23,11 @@ import { PaymentGateway } from './payment.gateway';
         WebhookRepository,
         PrismaService,
         StripeService,
-        PaymentGateway
+        PaymentGateway,
+        ZohoUpdateService,
+        ZohoService,
+        PandaDocService,
+        OnboardingRepository
     ],
     exports: [WebhookService],
 })

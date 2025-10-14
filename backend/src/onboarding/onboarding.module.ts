@@ -10,6 +10,7 @@ import { StripeService } from '../services/stripe.service';
 import { PandaDocService } from '../services/panda-doc.service';
 import { ZohoService } from '../services/zoho.service';
 import { SlackService } from 'src/common/slack.service';
+import { ZohoUpdateService } from 'src/services/zoho-update.service';
 
 @Module({
     imports: [
@@ -24,7 +25,8 @@ import { SlackService } from 'src/common/slack.service';
         StripeService,
         PandaDocService,
         ZohoService,
-        SlackService
+        SlackService,
+        ZohoUpdateService
     ],
     exports: [OnboardingService],
 })

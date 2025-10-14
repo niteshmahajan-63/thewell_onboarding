@@ -3,8 +3,9 @@ import { StripeService } from '../services/stripe.service';
 import { OnboardingRepository } from './onboarding.repository';
 import { PandaDocService } from '../services/panda-doc.service';
 import { ZohoService } from '../services/zoho.service';
-import { SlackService, ErrorInfo, FrontendErrorContext } from 'src/common/slack.service';
+import { SlackService, ErrorInfo } from 'src/common/slack.service';
 import { SendSlackMessageDto } from './dto';
+import { ZohoUpdateService } from 'src/services/zoho-update.service';
 
 @Injectable()
 export class OnboardingService {
@@ -16,6 +17,7 @@ export class OnboardingService {
 		private readonly stripeService: StripeService,
 		private readonly pandaDocService: PandaDocService,
 		private readonly slackService: SlackService,
+		private readonly zohoUpdateService: ZohoUpdateService,
 	) { }
 
 	/*
@@ -207,15 +209,15 @@ export class OnboardingService {
 			const updatedClientStep = await this.onboardingRepository.updateStepCompletionStatus(recordId, stepId);
 
 			if (stepId === 1) {
-				await this.updatePandaDocURL(recordId);
+				await this.zohoUpdateService.updatePandaDocURL(recordId);
 			}
 
 			if (stepId === 2) {
-				await this.updateStripePayment(recordId);
+				// await this.zohoUpdateService.updateStripePayment(recordId);
 			}
 
 			if (stepId === 3) {
-				await this.updateCalendly(recordId);
+				await this.zohoUpdateService.updateCalendly(recordId);
 			}
 
 			if (!updatedClientStep) {
@@ -256,7 +258,7 @@ export class OnboardingService {
 				if (dbRecord.pandadocAgreementCompleted !== "Yes") {
 					const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
 					if (response) {
-						await this.updatePandaDocURL(recordId);
+						await this.zohoUpdateService.updatePandaDocURL(recordId);
 						await this.completeStep(recordId, 1);
 					}
 				}
@@ -266,7 +268,7 @@ export class OnboardingService {
 				if (dbRecord.stripePaymentCompleted !== "Yes") {
 					const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
 					if (response && response.paymentStatus === "succeeded") {
-						await this.updateStripePayment(recordId);
+						await this.zohoUpdateService.updateStripePayment(recordId);
 						await this.completeStep(recordId, 2);
 					}
 				}
@@ -277,90 +279,6 @@ export class OnboardingService {
 			return { record, steps, pandadoc_session_id };
 		} catch (error) {
 			this.logger.error(`Failed to fetch record with steps for ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
-
-	/**
-	 * Updates the PandaDoc URL in the Zoho record
-	 * @param recordId - The Zoho record ID
-	 * @throws {Error} - If there is an error during the update operation
-	 * @returns {Promise<void>} - Resolves when the update is successful
-	 */
-	async updatePandaDocURL(recordId: string): Promise<void> {
-		try {
-			const zohoRecord = await this.zohoService.getRecordById(recordId);
-			const pandaDocId = zohoRecord.PandaDoc_ID;
-			if (!pandaDocId) {
-				this.logger.warn(`No PandaDoc ID found for record ${recordId}`);
-				return;
-			}
-
-			const response = await this.pandaDocService.isDocumentSigned(pandaDocId);
-			if (!response || response === true || !('sharedLink' in response)) {
-				this.logger.warn(`No signing link found for PandaDoc ID ${pandaDocId}`);
-				return;
-			}
-
-			const payload = {
-				Sender_PandaDoc_URL:
-				{
-					value: response.sharedLink,
-					url: response.sharedLink
-				},
-				Pandadoc_Agreement_Completed: 'Yes',
-				Signer_Name: response.signerName,
-				Title: response.signerTitle
-			};
-			await this.zohoService.updateRecord(recordId, payload);
-
-			this.logger.log(`PandaDoc URL updated successfully for record ${recordId}`);
-		} catch (error) {
-			this.logger.error(`Failed to update PandaDoc URL for record ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
-
-	async updateStripePayment(recordId: string): Promise<void> {
-		try {
-			const zohoRecord = await this.zohoService.getRecordById(recordId);
-			const stripeCustomerId = zohoRecord.Stripe_Customer_Id;
-			const Stripe_Payment_Completed = zohoRecord.Stripe_Payment_Completed;
-			if (!stripeCustomerId) {
-				this.logger.warn(`No Stripe Customer ID found for record ${recordId}`);
-				return;
-			}
-			if (Stripe_Payment_Completed === "Yes") {
-				this.logger.log(`Stripe payment already completed for record ${recordId}`);
-				return;
-			}
-			const response = await this.onboardingRepository.getStripePaymentRecord(recordId);
-			
-			if (response && response.paymentStatus === "succeeded") {
-				let formattedPaymentDate = response.paymentDate;
-				if (response.paymentDate) {
-					let dateStr = response.paymentDate;
-					if (response.paymentDate instanceof Date) {
-						dateStr = response.paymentDate.toISOString();
-					}
-					if (typeof dateStr === 'string') {
-						formattedPaymentDate = dateStr.replace(/\.[0-9]{3}Z$/, '');
-					}
-				}
-
-				const payload = {
-					Stripe_Payment_ID: response.paymentId,
-					Payment_Source: response.paymentSource,
-					Payment_Date: formattedPaymentDate,
-					Payment: '',
-					Payment_Status: response.paymentStatus,
-					Stripe_Payment_Completed: 'Yes',
-				};
-				console.log(payload);
-				await this.zohoService.updateRecord(recordId, payload);
-			}
-		} catch (error) {
-			this.logger.error(`Failed to update Stripe payment for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}
@@ -416,22 +334,6 @@ export class OnboardingService {
 			};
 		} catch (error) {
 			this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
-
-	async updateCalendly(recordId: string): Promise<void> {
-		this.logger.log(`Updating Calendly booking for record: ${recordId}`);
-
-		try {
-			const payload = {
-				Intake_Meeting_Completed: "Yes"
-			}
-
-			await this.zohoService.updateRecord(recordId, payload);
-			this.logger.log(`Calendly booking updated successfully for record ${recordId}`);
-		} catch (error) {
-			this.logger.error(`Failed to update Calendly booking for record ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

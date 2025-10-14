@@ -6,6 +6,7 @@ import { CalendlyWebhookPayload } from './dto/calendly.dto';
 import { WebhookRepository } from './webhook.repository';
 import Stripe from 'stripe';
 import { StripeService } from '../services/stripe.service';
+import { ZohoUpdateService } from 'src/services/zoho-update.service';
 
 @Injectable()
 export class WebhookService {
@@ -18,7 +19,8 @@ export class WebhookService {
         private configService: ConfigService,
         private webhookRepository: WebhookRepository,
         private stripeService: StripeService,
-        private paymentGateway: PaymentGateway
+        private paymentGateway: PaymentGateway,
+        private readonly zohoUpdateService: ZohoUpdateService,
     ) {
         // Initialize Calendly webhook secret
         this.calendlyWebhookSecret = this.configService.get<string>('CALENDLY_WEBHOOK_SIGNING_KEY');
@@ -207,6 +209,8 @@ export class WebhookService {
                             createdAt: new Date(paymentIntent.created * 1000),
                             updatedAt: new Date()
                         });
+
+                        await this.zohoUpdateService.updateStripePayment(recordExist.zohoRecordId);
 
                         return {
                             message: 'Stripe payment_intent.succeeded event processed successfully',

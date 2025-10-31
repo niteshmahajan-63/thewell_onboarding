@@ -35,6 +35,7 @@ model Client {
   customerEmail              String?  @map("customer_email")
   deactivatedLink            String?  @map("deactivated_link")
   customPandadocURL          String?  @map("custom_pandadoc_url")
+  microdepositUrl            Json?    @map("microdeposit_url")
 
   @@map("clients")
 }

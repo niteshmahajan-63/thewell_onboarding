@@ -17,6 +17,7 @@ export const useOnboarding = (recordId: string) => {
     const [error, setError] = useState<string | null>(null)
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
     const [steps, setSteps] = useState<OnboardingStep[]>([])
+    const [nextAction, setnextAction] = useState(false);
 
     const loadOnboardingData = useCallback(async () => {
         if (!recordId || recordId.trim() === '') return
@@ -92,5 +93,7 @@ export const useOnboarding = (recordId: string) => {
         onboardingConfig,
         steps,
         loadOnboardingData,
+        nextAction,
+        setnextAction,
     }
 }

@@ -105,4 +105,25 @@ export class ZohoUpdateService {
             throw error;
         }
     }
+
+    async updateMicroDepositUrl(recordId: string, microdepositUrl: string): Promise<void> {
+        try {
+            const zohoRecord = await this.zohoService.getRecordById(recordId);
+
+            if(!zohoRecord.Microdeposit_URL) {
+                const payload = {
+                    Microdeposit_URL: {
+                        value: microdepositUrl,
+                        url: microdepositUrl
+                    },
+                };
+                await this.zohoService.updateRecord(recordId, payload);
+            }
+
+            this.logger.log(`PandaDoc URL updated successfully for record ${recordId}`);
+        } catch (error) {
+            this.logger.error(`Failed to update PandaDoc URL for record ${recordId}: ${error.message}`);
+            throw error;
+        }
+    }
 }

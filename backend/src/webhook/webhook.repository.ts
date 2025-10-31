@@ -93,4 +93,17 @@ export class WebhookRepository {
             throw error;
         }
     }
+
+    async storeMicrodepositUrl(record_id: string, url: string): Promise<any> {
+        try {
+            this.logger.log(`Storing microdeposit URL for record_id: ${record_id}`);
+            return await this.prismaService.client.update({
+                where: { zohoRecordId: record_id },
+                data: { microdepositUrl: url }
+            });
+        } catch (error) {
+            this.logger.error(`Error storing microdeposit URL: ${error.message}`);
+            throw error;
+        }
+    }
 }

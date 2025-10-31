@@ -5,6 +5,7 @@ import OnboardingHeader from './OnboardingHeader'
 import StepIndicator from './StepIndicator'
 import OnboardingForm from './OnboardingForm'
 import Expired from './Expired'
+import NextAction from './NextAction'
 
 const OnboardingContent: React.FC = () => {
 	const {
@@ -19,6 +20,7 @@ const OnboardingContent: React.FC = () => {
 		steps,
 		recordId,
 		deactivatedLink,
+		nextAction,
 	} = useOnboardingContext()
 
 	if (isLoading) {
@@ -71,15 +73,17 @@ const OnboardingContent: React.FC = () => {
 				currentStep={currentStep}
 				completedSteps={completedSteps}
 			/>
-			<OnboardingForm
-				currentStep={currentStep}
-				steps={steps}
-				setCurrentStep={setCurrentStep}
-				pandaDocMode={pandaDocMode}
-				recordId={recordId}
-				completedSteps={completedSteps}
-				setCompletedSteps={setCompletedSteps}
-			/>
+			{nextAction ? <NextAction /> : (
+				<OnboardingForm
+					currentStep={currentStep}
+					steps={steps}
+					setCurrentStep={setCurrentStep}
+					pandaDocMode={pandaDocMode}
+					recordId={recordId}
+					completedSteps={completedSteps}
+					setCompletedSteps={setCompletedSteps}
+				/>
+			)}
 		</div>
 	)
 }

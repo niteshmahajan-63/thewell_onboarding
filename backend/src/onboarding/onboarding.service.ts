@@ -56,6 +56,7 @@ export class OnboardingService {
 			customerEmail: zohoRecord.Customer_Email || null,
 			deactivatedLink: zohoRecord.Deactivated_Link || null,
 			customPandadocURL: zohoRecord.Custom_Pandadoc_URL.value || null,
+			microdepositUrl: zohoRecord.Microdeposit_URL || {},
 		};
 
 		try {

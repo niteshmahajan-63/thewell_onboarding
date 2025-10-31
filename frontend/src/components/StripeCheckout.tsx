@@ -43,6 +43,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
     const stripe = useStripe();
     const elements = useElements();
     const socketRef = useRef<Socket | null>(null);
+    const { setnextAction } = useOnboardingContext();
 
     useEffect(() => {
         console.info(socketConnected);
@@ -56,6 +57,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
                         setPaymentStatus('processing');
                         setMessage('Processing your payment – please don’t refresh or close this window.');
                         setShowStatusModal(true);
+                    } else if (status == 'requires_action') {
+                        setnextAction(true);
                     }
                 } catch (err) {
                     console.error('Stripe payment intent error:', err);
@@ -172,6 +175,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
                     setPaymentStatus('processing');
                     setShowStatusModal(true);
                     setIsLoading(false);
+                    break;
+
+                case 'requires_action':
+                    setnextAction(true);
                     break;
 
                 default:

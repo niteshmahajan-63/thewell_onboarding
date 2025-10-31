@@ -22,6 +22,8 @@ interface OnboardingContextType {
   onboardingConfig: OnboardingRecord | null
   steps: OnboardingStep[]
   loadOnboardingData: () => Promise<void>
+  nextAction: boolean
+  setnextAction: (nextAction: boolean) => void
 }
 
 interface OnboardingProviderProps {

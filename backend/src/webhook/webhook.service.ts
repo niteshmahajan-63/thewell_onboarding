@@ -217,6 +217,45 @@ export class WebhookService {
                             success: true
                         };
                     }
+                
+                case 'payment_intent.requires_action':
+                    this.logger.log('Stripe payment intent requires action');
+
+                    recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (recordExist && recordExist.paymentStatus !== 'requires_action') {
+                        invoice = '';
+                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                        }
+
+                        if (typeof paymentIntent.payment_method === 'string') {
+                            formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                        }
+
+                        await this.webhookRepository.storeStripePayment({
+                            clientSecret: paymentIntent.client_secret,
+                            customerId: paymentIntent.customer,
+                            paymentDate: new Date(paymentIntent.created * 1000),
+                            paymentStatus: paymentIntent.status,
+                            paymentId: paymentIntent.id,
+                            payment: payment,
+                            amount: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+                            paymentSource: formattedPaymentSource,
+                            invoiceId: invoice ? invoice.id : null,
+                            hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                            createdAt: new Date(paymentIntent.created * 1000),
+                            updatedAt: new Date()
+                        });
+
+                        await this.webhookRepository.storeMicrodepositUrl(recordExist.zohoRecordId, paymentIntent.next_action.verify_with_microdeposits.hosted_verification_url);
+
+                        await this.zohoUpdateService.updateMicroDepositUrl(recordExist.zohoRecordId, paymentIntent.next_action.verify_with_microdeposits.hosted_verification_url);
+
+                        return {
+                            message: 'Stripe payment_intent.requires_action event processed successfully',
+                            success: true
+                        };
+                    }
 
                 case 'payment_intent.payment_failed':
                     this.logger.error('Stripe payment intent failed');

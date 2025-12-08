@@ -40,7 +40,15 @@ export class StripeService {
                     recordId: recordId,
                 },
                 payment_settings: {
-                    payment_method_types: ['card', 'us_bank_account'],
+                    payment_method_types: ['card', 'us_bank_account', 'customer_balance'],
+                    payment_method_options: {
+                        customer_balance: {
+                            bank_transfer: {
+                                type: 'us_bank_transfer'
+                            },
+                            funding_type: 'bank_transfer'
+                        }
+                    }
                 }
             });
 
@@ -92,14 +100,23 @@ export class StripeService {
         try {
             const paymentMethod = await this.stripe.paymentMethods.retrieve(paymentMethodId);
             if (paymentMethod.type === 'us_bank_account') {
-                return 'Bank Transfer';
+                return 'ACH';
             } else if (paymentMethod.type === 'card') {
                 return 'Credit Card/Debit Card';
             } else {
-                return '';
+                return 'Bank Transfer';
             }
         } catch (error) {
             throw new Error(`Failed to retrieve payment method: ${error.message}`);
+        }
+    }
+
+    async retrievePaymentIntent(paymentId: string): Promise<Stripe.PaymentIntent> {
+        try {
+            const paymentIntents = await this.stripe.paymentIntents.retrieve(paymentId);
+            return paymentIntents;
+        } catch (error) {
+            throw new Error(`Failed to retrieve payment intent: ${error.message}`);
         }
     }
 }

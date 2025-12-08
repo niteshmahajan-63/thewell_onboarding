@@ -12,7 +12,9 @@ import api from "./api";
 export const getOnboardingByRecordId = async (recordId?: string): Promise<OnboardingRecordResponse> => {
     try {
         const url = `/onboarding/get-record?recordId=${recordId}`
-        const response = await api.get<OnboardingRecordResponse>(url);
+        const response = await api.get<OnboardingRecordResponse>(url, {
+            timeout: 30000,
+        });
 
         if (!response.data.success) {
             const errorMessage = response.data.message || "Failed to fetch record";
@@ -169,7 +171,7 @@ export const downloadInvoice = async (recordId: string): Promise<DownloadInvoice
     }
 };
 
-export const checkPaymentStatus = async (recordId: string): Promise<string> => {
+export const checkPaymentStatus = async (recordId: string): Promise<{status: string, isMicrodeposits: boolean}> => {
     try {
         const url = `/onboarding/check-payment-status?recordId=${recordId}`;
         const response = await api.get<PaymentStatusResponse>(url);
@@ -179,7 +181,10 @@ export const checkPaymentStatus = async (recordId: string): Promise<string> => {
             throw new Error(errorMessage);
         }
 
-        return response.data.data.status;
+        return {
+            status: response.data.data.status,
+            isMicrodeposits: response.data.data.isMicrodeposits
+        };
     } catch (error: any) {
         if (error.response?.data) {
             const apiError = error.response.data;

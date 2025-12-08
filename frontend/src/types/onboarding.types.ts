@@ -107,5 +107,6 @@ export interface PaymentStatusResponse {
     statusCode: number;
     data: {
         status: string;
+        isMicrodeposits: boolean;
     };
 }

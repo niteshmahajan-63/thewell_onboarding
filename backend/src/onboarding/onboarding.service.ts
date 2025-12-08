@@ -254,7 +254,7 @@ export class OnboardingService {
 			if (!dbRecord) {
 				throw new Error(`Record with ID ${recordId} not found in the database`);
 			}
-			
+
 			if ((dbRecord.agreementRequired === 'Yes') && (dbRecord.pandaDocId)) {
 				if (dbRecord.pandadocAgreementCompleted !== "Yes") {
 					const response = await this.pandaDocService.isDocumentSigned(record.PandaDoc_ID);
@@ -320,18 +320,27 @@ export class OnboardingService {
 		}
 	}
 
-	async checkPaymentStatus(recordId: string): Promise<{ status: string }> {
+	async checkPaymentStatus(recordId: string): Promise<{ status: string, isMicrodeposits: boolean }> {
 		this.logger.log(`Checking payment status for recordId: ${recordId}`);
 
 		try {
 			const paymentRecord = await this.onboardingRepository.getStripePaymentRecord(recordId);
-			
+
 			if (!paymentRecord) {
 				throw new Error(`Payment intent with ID ${recordId} not found`);
 			}
 
+			let isMicrodeposits = false;
+			if (paymentRecord.paymentId) {
+				const paymentIntent = await this.stripeService.retrievePaymentIntent(paymentRecord.paymentId);
+				if (paymentIntent && paymentIntent.next_action?.type === 'verify_with_microdeposits') {
+					isMicrodeposits = true;
+				}
+			}
+
 			return {
-				status: paymentRecord.paymentStatus
+				status: paymentRecord.paymentStatus,
+				isMicrodeposits: isMicrodeposits
 			};
 		} catch (error) {
 			this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
@@ -364,7 +373,7 @@ export class OnboardingService {
 					severity: slackMessageDto.severity,
 					additionalContext: slackMessageDto.additionalContext,
 				});
-				
+
 				this.logger.log('Frontend error alert sent to Slack successfully');
 			} else {
 				await this.slackService.sendMessage('Empty notification from frontend');

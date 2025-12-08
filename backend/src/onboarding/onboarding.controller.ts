@@ -108,7 +108,7 @@ export class OnboardingController {
 	@Get('check-payment-status')
 	async checkPaymentStatus(
 		@Query() query: CheckPaymentStatusDto
-	): Promise<ApiResponse<{ status: string }>> {
+	): Promise<ApiResponse<{ status: string, isMicrodeposits: boolean }>> {
 		const { recordId } = query;
 
 		this.logger.log(`Checking payment status for recordId: ${recordId}`);

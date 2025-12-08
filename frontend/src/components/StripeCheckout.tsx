@@ -51,13 +51,13 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
         if (recordId) {
             const fetchPaymentStatus = async () => {
                 try {
-                    const status = await checkPaymentStatus(recordId);
+                    const paymentResponse = await checkPaymentStatus(recordId);
 
-                    if (status == 'processing') {
+                    if (paymentResponse.status == 'processing') {
                         setPaymentStatus('processing');
                         setMessage('Processing your payment – please don’t refresh or close this window.');
                         setShowStatusModal(true);
-                    } else if (status == 'requires_action') {
+                    } else if (paymentResponse.status == 'requires_action' && paymentResponse.isMicrodeposits == true) {
                         setnextAction(true);
                     }
                 } catch (err) {
@@ -178,7 +178,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
                     break;
 
                 case 'requires_action':
-                    setnextAction(true);
+                    if (paymentIntent.next_action?.type === 'verify_with_microdeposits') {
+                        setnextAction(true);
+                    }
                     break;
 
                 default:

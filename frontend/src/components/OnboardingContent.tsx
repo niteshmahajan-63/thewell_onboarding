@@ -21,6 +21,7 @@ const OnboardingContent: React.FC = () => {
 		recordId,
 		deactivatedLink,
 		nextAction,
+		isStripePayment
 	} = useOnboardingContext()
 
 	if (isLoading) {
@@ -82,6 +83,7 @@ const OnboardingContent: React.FC = () => {
 					recordId={recordId}
 					completedSteps={completedSteps}
 					setCompletedSteps={setCompletedSteps}
+					isStripePayment={isStripePayment}
 				/>
 			)}
 		</div>

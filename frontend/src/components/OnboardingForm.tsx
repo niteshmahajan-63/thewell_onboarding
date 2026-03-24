@@ -20,6 +20,7 @@ interface OnboardingFormProps {
     recordId: string;
     completedSteps: Set<string>;
     setCompletedSteps: (steps: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+    isStripePayment: boolean;
 }
 
 const OnboardingForm: React.FC<OnboardingFormProps> = ({
@@ -29,9 +30,10 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     pandaDocMode,
     recordId,
     completedSteps,
-    setCompletedSteps
+    setCompletedSteps,
+    isStripePayment
 }) => {
-    
+
     const [stepCompleting, setStepCompleting] = useState(false)
 
     const getCurrentStepObject = () => {
@@ -129,13 +131,17 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
                             >
                                 <p className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#000' }}>Onboarding Complete!</p>
                                 <p className="text-base sm:text-lg" style={{ color: '#000' }}>Thank you for completing your onboarding. You're all set, and we're excited to start working with you!</p>
-                                <button
-                                    className="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold shadow transition-colors"
-                                    style={{ backgroundColor: '#BE9E44', color: '#fff', border: '1px solid #000', borderRadius: 0 }}
-                                    onClick={handleDownloadReceipt}
-                                >
-                                    Download Payment Receipt
-                                </button>
+
+                                {isStripePayment && (
+                                    <button
+                                        className="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold shadow transition-colors"
+                                        style={{ backgroundColor: '#BE9E44', color: '#fff', border: '1px solid #000', borderRadius: 0 }}
+                                        onClick={handleDownloadReceipt}
+                                    >
+                                        Download Payment Receipt
+                                    </button>
+                                )}
+
                             </div>
                         </div>
                     </CardContent>

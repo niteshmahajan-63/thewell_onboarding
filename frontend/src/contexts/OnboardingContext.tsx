@@ -24,6 +24,7 @@ interface OnboardingContextType {
   loadOnboardingData: () => Promise<void>
   nextAction: boolean
   setnextAction: (nextAction: boolean) => void
+  isStripePayment: boolean
 }
 
 interface OnboardingProviderProps {

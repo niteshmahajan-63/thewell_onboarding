@@ -18,6 +18,7 @@ export const useOnboarding = (recordId: string) => {
     const [onboardingConfig, setOnboardingConfig] = useState<OnboardingRecord | null>(null)
     const [steps, setSteps] = useState<OnboardingStep[]>([])
     const [nextAction, setnextAction] = useState(false);
+    const [isStripePayment, setIsStripePayment] = useState(false);
 
     const loadOnboardingData = useCallback(async () => {
         if (!recordId || recordId.trim() === '') return
@@ -51,6 +52,10 @@ export const useOnboarding = (recordId: string) => {
                 setCurrentStep(3);
             } else if (record.Agreement_Required === "No") {
                 setCurrentStep(2);
+            }
+
+            if (record.Stripe_Required === "Yes") {
+                setIsStripePayment(true);
             }
             
             const completedStepIds = new Set<string>()
@@ -95,5 +100,6 @@ export const useOnboarding = (recordId: string) => {
         loadOnboardingData,
         nextAction,
         setnextAction,
+        isStripePayment
     }
 }

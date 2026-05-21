@@ -28,7 +28,7 @@ const OnboardingContent: React.FC = () => {
 		return (
 			<div className="flex justify-center items-center py-16">
 				<div className="flex items-center space-x-3">
-					<div className="w-6 h-6 border-2 border-well-primary border-t-transparent rounded-full animate-spin"></div>
+					<div className="w-6 h-6 border-2 border-well-gold border-t-transparent rounded-full animate-spin"></div>
 					<span className="text-gray-300">Loading onboarding data...</span>
 				</div>
 			</div>

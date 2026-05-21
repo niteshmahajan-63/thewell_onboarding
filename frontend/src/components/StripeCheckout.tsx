@@ -365,9 +365,9 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                     <div className="flex flex-col items-center justify-center w-full">
                         {/* Logo - Aligned with image left edge */}
                         <div className="mb-8 lg:mb-20 w-full max-w-[30rem] px-4 sm:px-0 text-left">
-                            <div className="flex items-center">
-                                <div className="flex items-center justify-center w-20 h-20 sm:w-30 sm:h-30 bg-black rounded-lg mr-2 p-3 sm:p-4">
-                                    <img src="/thewell-logo.png" alt="The Well Logo" className="h-12 w-12 sm:h-16 sm:w-16 rounded" />
+                            <div className="flex items-center gap-3">
+                                <div className="bg-well-charcoal rounded-lg p-2 flex items-center justify-center">
+                                    <img src="/the-well-mark-gold.png" alt="The Well Logo" className="h-12 w-12 sm:h-14 sm:w-14" />
                                 </div>
                                 <span className="text-black text-xl sm:text-2xl font-semibold tracking-tight">
                                     THE WELL
@@ -445,7 +445,7 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
                     {!clientSecret ? (
                         <div className="flex flex-col items-center justify-center py-4 sm:py-6">
                             <div className="relative">
-                                <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-gray-200 border-t-well-primary"></div>
+                                <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-gray-200 border-t-well-gold"></div>
                                 <div className="absolute inset-0 rounded-full border-2 border-gray-100"></div>
                             </div>
                             <p className="mt-3 text-gray-500 text-xs sm:text-sm">Initializing secure payment...</p>

@@ -7,10 +7,20 @@ export default {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			'display': ['Cinzel', 'serif'],
+  			'editorial': ['Cormorant Garamond', 'serif'],
+  			'body': ['Inter', 'sans-serif'],
+  		},
   		colors: {
-  			'well-primary': '#cbb26a',
-  			'well-light': '#d8c690',
-  			'well-dark': '#be9e44',
+  			'well-gold': '#BE9E44',
+  			'well-charcoal': '#1A1A1A',
+  			'well-ivory': '#F8F5F0',
+  			'well-teal': '#2A4C4A',
+  			'well-gold-dim': '#9A7F36',
+  			'well-dim-ivory': '#C2BDB4',
+  			'well-card': '#272727',
+  			'well-attr-grey': '#787870',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

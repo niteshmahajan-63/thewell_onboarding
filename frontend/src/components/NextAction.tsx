@@ -6,7 +6,7 @@ const NextAction: React.FC = () => {
         <>
             <div className="w-full mx-auto space-y-4 sm:space-y-8 px-4 sm:px-0">
                 <Card className="w-full bg-white border-gray-300 overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-well-dark via-well-primary to-well-light w-full">
+                    <CardHeader className="bg-well-gold w-full">
                         <CardTitle className="text-center text-white font-bold text-lg sm:text-xl">
                             Microdeposit Verification Needed
                         </CardTitle>

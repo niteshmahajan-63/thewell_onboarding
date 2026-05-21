@@ -115,27 +115,21 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
         return (
             <div className="w-full mx-auto space-y-4 sm:space-y-8 px-4 sm:px-0">
                 <Card className="w-full bg-white border-gray-300 overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-well-dark via-well-primary to-well-light w-full">
-                        <CardTitle className="text-center text-white font-bold text-lg sm:text-xl">
+                    <CardHeader className="bg-well-gold w-full">
+                        <CardTitle className="text-center text-[#1A1A1A] font-bold text-lg sm:text-xl">
                             Onboarding Complete
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 sm:p-6 min-h-[300px] sm:min-h-[400px] flex items-center justify-center bg-white w-full">
                         <div className="text-center w-full">
-                            <div
-                                className="rounded-xl p-4 sm:p-12 max-w-md mx-auto border-2"
-                                style={{
-                                    backgroundColor: '#d8c690',
-                                    borderColor: '#CBB26A',
-                                }}
-                            >
-                                <p className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#000' }}>Onboarding Complete!</p>
-                                <p className="text-base sm:text-lg" style={{ color: '#000' }}>Thank you for completing your onboarding. You're all set, and we're excited to start working with you!</p>
+                            <div className="bg-well-gold rounded-xl p-4 sm:p-12 max-w-md mx-auto border-2">
+                                <p className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-[#1A1A1A]">Onboarding Complete!</p>
+                                <p className="text-base sm:text-lg text-[#1A1A1A]">Thank you for completing your onboarding. You're all set, and we're excited to start working with you!</p>
 
                                 {isStripePayment && (
                                     <button
-                                        className="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold shadow transition-colors"
-                                        style={{ backgroundColor: '#BE9E44', color: '#fff', border: '1px solid #000', borderRadius: 0 }}
+                                        className="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold shadow transition-colors text-[#1A1A1A]"
+                                        style={{ backgroundColor: '#1A1A1A', border: '1px solid #1A1A1A', color: '#F8F5F0', borderRadius: 0 }}
                                         onClick={handleDownloadReceipt}
                                     >
                                         Download Payment Receipt
@@ -161,8 +155,8 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
     return (
         <div className="w-full mx-auto space-y-8">
             <Card className="w-full bg-white border-gray-300 overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-well-dark via-well-primary to-well-light w-full">
-                    <CardTitle className="text-center text-white font-bold text-xl">
+                <CardHeader className="bg-well-gold w-full">
+                    <CardTitle className="text-center text-[#1A1A1A] font-bold text-xl">
                         {currentStepObject.title}
                     </CardTitle>
                 </CardHeader>

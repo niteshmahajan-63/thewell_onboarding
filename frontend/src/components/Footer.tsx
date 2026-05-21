@@ -2,7 +2,7 @@ import React from 'react'
 
 const Footer: React.FC = () => {
     return (
-        <footer className="bg-black border-t mt-8 sm:mt-16" style={{ borderTopColor: '#cbb26a' }}>
+        <footer className="border-t mt-8 sm:mt-16" style={{ backgroundColor: '#1A1A1A', borderTopColor: '#BE9E44' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
                 <div className="flex flex-col items-center space-y-6 sm:space-y-8">
                     <div className="flex items-center">
@@ -13,11 +13,11 @@ const Footer: React.FC = () => {
                         />
                     </div>
 
-                    <div className="text-center text-gray-400 space-y-1 sm:space-y-2">
-                        <p className="font-medium text-sm sm:text-base">The Well Recruiting Solutions</p>
-                        <p className="text-sm sm:text-base">21501 N. 78th Ave #100</p>
-                        <p className="text-sm sm:text-base">Peoria, AZ 85382</p>
-                        <p className="font-medium text-sm sm:text-base" style={{ color: '#cbb26a' }}>info@emailthewell.com</p>
+                    <div className="text-center space-y-1 sm:space-y-2" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        <p className="font-semibold text-sm sm:text-base" style={{ color: '#BE9E44' }}>The Well Recruiting Solutions</p>
+                        <p className="text-sm sm:text-base" style={{ color: '#C2BDB4' }}>21501 N. 78th Ave #100</p>
+                        <p className="text-sm sm:text-base" style={{ color: '#C2BDB4' }}>Peoria, AZ 85382</p>
+                        <p className="font-medium text-sm sm:text-base" style={{ color: '#BE9E44' }}>info@emailthewell.com</p>
                     </div>
 
                     <div className="flex space-x-6 sm:space-x-8">
@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="transition-colors transform hover:scale-110"
-                            style={{ color: '#cbb26a' }}
+                            style={{ color: '#BE9E44' }}
                             title="YouTube"
                         >
                             <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="transition-colors transform hover:scale-110"
-                            style={{ color: '#cbb26a' }}
+                            style={{ color: '#BE9E44' }}
                             title="LinkedIn"
                         >
                             <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -47,8 +47,8 @@ const Footer: React.FC = () => {
                         </a>
                     </div>
 
-                    <div className="text-center pt-6 sm:pt-8 w-full" style={{ borderTopColor: '#cbb26a', borderTopWidth: '1px', borderTopStyle: 'solid' }}>
-                        <p className="text-xs sm:text-sm" style={{ color: '#cbb26a' }}>&copy;{new Date().getFullYear()} The Well. All Rights Reserved.</p>
+                    <div className="text-center pt-6 sm:pt-8 w-full" style={{ borderTopColor: '#9A7F36', borderTopWidth: '1px', borderTopStyle: 'solid' }}>
+                        <p className="text-xs sm:text-sm" style={{ color: '#787870' }}>&copy;{new Date().getFullYear()} The Well. All Rights Reserved.</p>
                     </div>
                 </div>
             </div>

@@ -37,9 +37,9 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
                     <div className="relative z-10">
                         <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-base sm:text-xl font-bold border-2 transition-all duration-300 ${
                             completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id)
-                                ? 'bg-well-primary text-white border-well-primary'
+                                ? 'bg-well-gold text-white border-well-gold'
                                 : compareStepId(step.id, currentStep)
-                                    ? 'bg-well-primary text-white border-well-primary'
+                                    ? 'bg-well-gold text-white border-well-gold'
                                     : 'bg-white text-gray-600 border-gray-300'
                         }`}>
                             {completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id) ? (
@@ -53,7 +53,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
                     <div className="mt-3 text-center px-2">
                         <div className={`text-sm sm:text-base font-medium transition-colors duration-300 ${
                             completedSteps.has(String(step.id)) || isCurrentGreaterOrEqual(step.id)
-                                ? 'text-well-primary'
+                                ? 'text-well-gold'
                                 : 'text-gray-500'
                         }`}>
                             {step.name === "Intake Meeting" ? (
@@ -71,7 +71,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep, compl
                         <div 
                             className={`absolute h-[2px] top-5 sm:top-7 ${
                                 completedSteps.has(String(step.id)) || isCurrentGreaterThan(step.id)
-                                    ? 'bg-well-primary'
+                                    ? 'bg-well-gold'
                                     : 'bg-gray-300'
                             }`} 
                             style={{ 

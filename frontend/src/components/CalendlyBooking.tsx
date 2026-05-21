@@ -40,7 +40,7 @@ const CalendlyBooking: React.FC<CalendlyBookingProps> = ({ handleStepComplete, r
                     To proceed with your onboarding, please book your intake meeting using the calender below.
                 </p>
             </div>
-            <div className="bg-white border-2 border-well-primary rounded-xl p-4 mx-auto">
+            <div className="bg-white border-2 border-well-gold rounded-xl p-4 mx-auto">
                 <div className="calendly-embed" style={{ width: "100%" }}>
                     <InlineWidget
                         url={calendlyBookingURL || ''}

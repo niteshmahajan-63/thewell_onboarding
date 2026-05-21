@@ -101,7 +101,7 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 			{isLoading && (
 				<div className="flex justify-center items-center py-3 sm:py-4 mb-4">
 					<div className="flex items-center space-x-2 sm:space-x-3">
-						<Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-well-primary" />
+						<Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-well-gold" />
 						<span className="text-sm sm:text-base text-gray-600">Loading document...</span>
 					</div>
 				</div>
@@ -112,7 +112,7 @@ const PandaDocSigning: React.FC<PandaDocSigningProps> = ({ handleStepComplete })
 					<Button
 						onClick={handleStartSigning}
 						disabled={isLoading}
-						className="bg-well-primary hover:bg-well-dark text-white font-semibold flex items-center space-x-2 px-6 py-2 w-full sm:w-auto"
+						className="bg-well-gold hover:bg-well-gold-dim text-[#1A1A1A] font-semibold flex items-center space-x-2 px-6 py-2 w-full sm:w-auto"
 					>
 						{isLoading ? (
 							<>

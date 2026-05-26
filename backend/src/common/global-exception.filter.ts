@@ -86,9 +86,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             return criticalPatterns.some(pattern => pattern.test(message));
         }
 
-        if (status === 404 && /payment|invoice|client|record/i.test(message)) {
-            return true;
-        }
+        // Do not treat 404 (Not Found) as critical to avoid noisy Slack alerts.
+        // Critical alerts are limited to 401/403 with important patterns or 5xx errors.
 
         return false;
     }

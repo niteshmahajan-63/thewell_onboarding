@@ -37,7 +37,7 @@ async function bootstrap() {
 	app.useGlobalFilters(new GlobalExceptionFilter(slackService));
 
 	const port = process.env.PORT || 5000;
-	await app.listen(port);
+	await app.listen(port, '127.0.0.1');
 	logger.log(`Application started successfully on port ${port}`);
 }
 

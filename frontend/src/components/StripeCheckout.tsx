@@ -40,6 +40,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
     const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [socketConnected, setSocketConnected] = useState(false);
+    const [isPaymentElementReady, setIsPaymentElementReady] = useState(false);
     const stripe = useStripe();
     const elements = useElements();
     const socketRef = useRef<Socket | null>(null);
@@ -128,7 +129,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!stripe || !elements) {
+        if (!stripe || !elements || !isPaymentElementReady || isLoading) {
             return;
         }
 
@@ -136,59 +137,73 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
         setMessage(null);
         setShowStatusModal(false);
 
-        const { error, paymentIntent } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: window.location.href,
-                payment_method_data: {
-                    billing_details: {
-                        email: email,
+        try {
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    return_url: window.location.href,
+                    payment_method_data: {
+                        billing_details: {
+                            email: email,
+                        }
                     }
-                }
-            },
-            redirect: 'if_required',
-        });
+                },
+                redirect: 'if_required',
+            });
 
-        if (error) {
-            setMessage(error.message || 'An unexpected error occurred.');
+            if (error) {
+                setMessage(error.message || 'An unexpected error occurred.');
+                setIsLoading(false);
+                setShowStatusModal(true);
+                setPaymentStatus('failed');
+                return;
+            }
+
+            if (paymentIntent) {
+                switch (paymentIntent.status) {
+                    case 'succeeded':
+                        setMessage('Payment successful!');
+                        setPaymentStatus('succeeded');
+                        setShowStatusModal(true);
+                        if (handleStepComplete) {
+                            handleStepComplete(true);
+                        }
+                        setIsLoading(false);
+                        break;
+
+                    case 'processing': {
+                    const processingMessage = `Processing your payment – please don’t refresh or close this window.`;
+                        setMessage(processingMessage);
+                        setPaymentStatus('processing');
+                        setShowStatusModal(true);
+                        setIsLoading(false);
+                        break;
+                    }
+
+                    case 'requires_action':
+                        if (paymentIntent.next_action?.type === 'verify_with_microdeposits') {
+                            setnextAction(true);
+                        }
+                        setIsLoading(false);
+                        break;
+
+                    default:
+                        setMessage(`Payment status: ${paymentIntent.status}`);
+                        setShowStatusModal(true);
+                        setIsLoading(false);
+                        break;
+                }
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error
+                ? err.message
+                : 'An unexpected payment error occurred.';
+
+            console.error('Stripe confirmPayment error:', err);
+            setMessage(errorMessage);
             setIsLoading(false);
             setShowStatusModal(true);
             setPaymentStatus('failed');
-            return;
-        }
-
-        if (paymentIntent) {
-            switch (paymentIntent.status) {
-                case 'succeeded':
-                    setMessage('Payment successful!');
-                    setPaymentStatus('succeeded');
-                    setShowStatusModal(true);
-                    if (handleStepComplete) {
-                        handleStepComplete(true);
-                    }
-                    setIsLoading(false);
-                    break;
-
-                case 'processing':
-                    const processingMessage = `Processing your payment – please don’t refresh or close this window.`;
-                    setMessage(processingMessage);
-                    setPaymentStatus('processing');
-                    setShowStatusModal(true);
-                    setIsLoading(false);
-                    break;
-
-                case 'requires_action':
-                    if (paymentIntent.next_action?.type === 'verify_with_microdeposits') {
-                        setnextAction(true);
-                    }
-                    break;
-
-                default:
-                    setMessage(`Payment status: ${paymentIntent.status}`);
-                    setShowStatusModal(true);
-                    setIsLoading(false);
-                    break;
-            }
         }
     };
 
@@ -198,11 +213,14 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
         setMessage(null);
     };
 
+    const isPaymentUnavailable = isLoading || !stripe || !elements || !isPaymentElementReady || paymentStatus === 'processing';
+
     return (
         <form onSubmit={handleSubmit} className="w-full">
             <div className="mb-4 sm:mb-6 max-w-lg mx-auto">
                 <div className="border border-gray-300 rounded-md p-3 sm:p-4 bg-white shadow-sm transition-all hover:shadow">
                     <PaymentElement
+                        onReady={() => setIsPaymentElementReady(true)}
                         options={{
                             layout: {
                                 type: 'tabs',
@@ -232,22 +250,22 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
             <div className="max-w-lg mx-auto">
                 <Button
                     type="submit"
-                    disabled={isLoading || !stripe || !elements || paymentStatus === 'processing'}
-                    className={`px-6 py-3 w-full rounded-md font-medium transition-all duration-200 ${isLoading || !stripe || !elements || paymentStatus === 'processing'
+                    disabled={isPaymentUnavailable}
+                    className={`px-6 py-3 w-full rounded-md font-medium transition-all duration-200 ${isPaymentUnavailable
                         ? 'opacity-70 cursor-not-allowed'
                         : 'transform hover:-translate-y-0.5 hover:shadow-lg'
                         }`}
                     style={{
-                        backgroundColor: (isLoading || !stripe || !elements || paymentStatus === 'processing') ? '#D4BC76' : '#BE9E44',
+                        backgroundColor: isPaymentUnavailable ? '#D4BC76' : '#BE9E44',
                         color: '#fff',
                     }}
                     onMouseOver={(e) => {
-                        if (!isLoading && stripe && elements && paymentStatus !== 'processing') {
+                        if (!isPaymentUnavailable) {
                             e.currentTarget.style.backgroundColor = '#967D35'
                         }
                     }}
                     onMouseOut={(e) => {
-                        if (!isLoading && stripe && elements && paymentStatus !== 'processing') {
+                        if (!isPaymentUnavailable) {
                             e.currentTarget.style.backgroundColor = '#BE9E44'
                         }
                     }}

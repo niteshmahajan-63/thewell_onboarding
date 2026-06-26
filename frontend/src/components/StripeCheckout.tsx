@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { io, Socket } from 'socket.io-client';
 import { Button } from './ui/button'
 import { useOnboardingContext } from '../contexts/OnboardingContext'
@@ -33,6 +33,50 @@ interface Appearance extends StripeAppearance {
 }
 
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
+
+const appearance: Appearance = {
+    theme: 'flat',
+    variables: {
+        fontFamily: ' "Gill Sans", sans-serif',
+        fontLineHeight: '1.5',
+        borderRadius: '10px',
+        colorBackground: '#F6F8FA',
+        accessibleColorOnColorPrimary: '#262626'
+    },
+    layout: {
+        type: 'tabs',
+        defaultCollapsed: false,
+    },
+    rules: {
+        '.Block': {
+            backgroundColor: 'var(--colorBackground)',
+            boxShadow: 'none',
+            padding: '12px'
+        },
+        '.Input': {
+            padding: '12px'
+        },
+        '.Input:disabled, .Input--invalid:disabled': {
+            color: 'lightgray'
+        },
+        '.Tab': {
+            padding: '10px 12px 8px 12px',
+            border: 'none'
+        },
+        '.Tab:hover': {
+            border: 'none',
+            boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 7px rgba(18, 42, 66, 0.04)'
+        },
+        '.Tab--selected, .Tab--selected:focus, .Tab--selected:hover': {
+            border: 'none',
+            backgroundColor: '#fff',
+            boxShadow: '0 0 0 1.5px var(--colorPrimaryText), 0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 7px rgba(18, 42, 66, 0.04)'
+        },
+        '.Label': {
+            fontWeight: '500'
+        }
+    }
+};
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordId, email }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -312,54 +356,10 @@ const StripeCheckout: React.FC<StripeCheckoutProps> = ({ handleStepComplete }) =
         }
     }, [recordId]);
 
-    const appearance: Appearance = {
-        theme: 'flat',
-        variables: {
-            fontFamily: ' "Gill Sans", sans-serif',
-            fontLineHeight: '1.5',
-            borderRadius: '10px',
-            colorBackground: '#F6F8FA',
-            accessibleColorOnColorPrimary: '#262626'
-        },
-        layout: {
-            type: 'tabs',
-            defaultCollapsed: false,
-        },
-        rules: {
-            '.Block': {
-                backgroundColor: 'var(--colorBackground)',
-                boxShadow: 'none',
-                padding: '12px'
-            },
-            '.Input': {
-                padding: '12px'
-            },
-            '.Input:disabled, .Input--invalid:disabled': {
-                color: 'lightgray'
-            },
-            '.Tab': {
-                padding: '10px 12px 8px 12px',
-                border: 'none'
-            },
-            '.Tab:hover': {
-                border: 'none',
-                boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 7px rgba(18, 42, 66, 0.04)'
-            },
-            '.Tab--selected, .Tab--selected:focus, .Tab--selected:hover': {
-                border: 'none',
-                backgroundColor: '#fff',
-                boxShadow: '0 0 0 1.5px var(--colorPrimaryText), 0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 7px rgba(18, 42, 66, 0.04)'
-            },
-            '.Label': {
-                fontWeight: '500'
-            }
-        }
-    };
-
-    const options: StripeElementsOptions = {
+    const options: StripeElementsOptions = useMemo(() => ({
         clientSecret: clientSecret || '',
         appearance,
-    };
+    }), [clientSecret]);
 
     const handleDownloadInvoice = async () => {
         try {

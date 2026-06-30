@@ -104,6 +104,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ handleStepComplete, recordI
                         setShowStatusModal(true);
                     } else if (paymentResponse.status == 'requires_action' && paymentResponse.isMicrodeposits == true) {
                         setnextAction(true);
+                    } else if (paymentResponse.status == 'succeeded') {
+                        setMessage('Payment successful!');
+                        setPaymentStatus('succeeded');
+                        handleStepComplete(true);
                     }
                 } catch (err) {
                     console.error('Stripe payment intent error:', err);
